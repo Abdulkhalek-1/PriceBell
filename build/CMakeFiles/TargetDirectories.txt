@@ -1,5 +1,0 @@
-/home/abdulkhalek/Projects/PriceBell/build/CMakeFiles/PriceBell.dir
-/home/abdulkhalek/Projects/PriceBell/build/CMakeFiles/edit_cache.dir
-/home/abdulkhalek/Projects/PriceBell/build/CMakeFiles/rebuild_cache.dir
-/home/abdulkhalek/Projects/PriceBell/build/CMakeFiles/PriceBell_autogen_timestamp_deps.dir
-/home/abdulkhalek/Projects/PriceBell/build/CMakeFiles/PriceBell_autogen.dir
