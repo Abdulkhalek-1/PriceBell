@@ -22,7 +22,7 @@ PriceBell is a price tracker application that monitors prices and discounts of v
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/PriceBell.git
+git clone https://github.com/Abdulkhalek-1/PriceBell.git
 cd PriceBell
 ```
 
