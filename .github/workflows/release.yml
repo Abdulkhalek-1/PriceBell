@@ -35,14 +35,11 @@ jobs:
 
       - name: Prepare AppDir
         run: |
-          mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/share/PriceBell/assets
-          mkdir -p AppDir/usr/share/PriceBell/i18n
-          mkdir -p AppDir/usr/share/PriceBell/plugins
+          mkdir -p AppDir/usr/bin/i18n
+          mkdir -p AppDir/usr/bin/plugins
 
           cp build/PriceBell AppDir/usr/bin/
-          cp -r build/assets/* AppDir/usr/share/PriceBell/assets/ 2>/dev/null || true
-          cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
+          cp build/i18n/*.qm AppDir/usr/bin/i18n/ 2>/dev/null || true
 
           rsvg-convert -w 256 -h 256 assets/logo.svg -o pricebell.png
 
