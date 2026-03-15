@@ -81,3 +81,22 @@ foreach(TEST_SRC ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME} Qt5::Sql Qt5::Network)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
+
+# Plugin validation test
+set(TEST_VALIDATION_SOURCES
+    src/core/PluginManager.cpp
+    src/handlers/SteamHandler.cpp
+    src/handlers/UdemyHandler.cpp
+    src/handlers/AmazonHandler.cpp
+    src/handlers/GenericWebHandler.cpp
+    src/storage/Database.cpp
+    src/storage/ProductRepository.cpp
+    src/storage/AlertRepository.cpp
+    src/utils/Logger.cpp
+    src/utils/HttpClient.cpp
+    include/utils/HttpClient.hpp
+)
+add_executable(test_validation tests/test_validation.cpp ${TEST_VALIDATION_SOURCES})
+target_include_directories(test_validation PRIVATE include)
+target_link_libraries(test_validation Qt5::Widgets Qt5::Sql Qt5::Network)
+add_test(NAME test_validation COMMAND test_validation)

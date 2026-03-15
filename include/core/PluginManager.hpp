@@ -4,10 +4,13 @@
 #include "core/DataStructs.hpp"
 
 #include <QString>
+#include <QStringList>
 #include <QMap>
 #include <QJsonObject>
 #include <memory>
 #include <vector>
+
+class QPluginLoader;
 
 // Manages all available price handlers — both built-in and dynamically loaded.
 //
@@ -20,6 +23,7 @@
 class PluginManager {
 public:
     PluginManager();
+    ~PluginManager();
 
     // Registers the three built-in handlers (Steam, Udemy, Amazon).
     void registerBuiltins();
@@ -33,12 +37,21 @@ public:
     // Returns the handler for the given source id, or nullptr if not found.
     IPriceHandler* handlerFor(const std::string& sourceId) const;
 
+    // Fetches a product, enforcing URL pattern restrictions for plugins.
+    FetchResult fetchProduct(const std::string& sourceId, const std::string& url);
+
     // Returns metadata for all registered handlers (for UI source selector).
     std::vector<SourceConfig> availableSources() const;
 
-private:
     // Validates that a plugin's declared metadata is safe to load.
-    bool validatePluginMetadata(const QJsonObject& meta) const;
+    static bool validatePluginMetadata(const QJsonObject& meta);
 
-    QMap<QString, std::shared_ptr<IPriceHandler>> m_handlers;
+private:
+    struct HandlerEntry {
+        std::shared_ptr<IPriceHandler> handler;
+        QStringList urlPatterns; // empty for built-in handlers (no restriction)
+    };
+
+    QMap<QString, HandlerEntry>      m_handlers;
+    QMap<QString, QPluginLoader*>    m_loaders;
 };

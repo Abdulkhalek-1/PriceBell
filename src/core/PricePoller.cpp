@@ -9,15 +9,32 @@ PricePoller::PricePoller(PluginManager* pluginManager, QObject* parent)
     , m_pluginManager(pluginManager)
 {}
 
-void PricePoller::setProducts(const std::vector<Product>& products) {
+void PricePoller::setProducts(std::vector<Product> products) {
     QMutexLocker lock(&m_mutex);
+
+    // Stop existing timers
+    for (auto* timer : m_timers)
+        timer->stop();
+    qDeleteAll(m_timers);
+    m_timers.clear();
+
     m_products.clear();
-    for (const auto& p : products)
-        m_products[p.id] = p;
+    for (auto& p : products) {
+        int id = p.id;
+        m_products[id] = std::move(p);
+    }
+
+    // Re-schedule if running
+    if (m_running) {
+        for (auto it = m_products.begin(); it != m_products.end(); ++it) {
+            scheduleProduct(it.value());
+        }
+    }
 }
 
 void PricePoller::start() {
     QMutexLocker lock(&m_mutex);
+    m_running = true;
     for (auto it = m_products.begin(); it != m_products.end(); ++it) {
         scheduleProduct(it.value());
     }
@@ -27,14 +44,18 @@ void PricePoller::start() {
 
 void PricePoller::stop() {
     QMutexLocker lock(&m_mutex);
+    m_running = false;
     for (auto* timer : m_timers)
         timer->stop();
     qDeleteAll(m_timers);
     m_timers.clear();
+    m_products.clear();
     Logger::info("PricePoller stopped");
 }
 
 void PricePoller::scheduleProduct(const Product& product) {
+    QMutexLocker lock(&m_mutex);
+
     if (!product.isActive) return;
 
     // Remove any existing timer for this product
@@ -75,7 +96,9 @@ void PricePoller::unscheduleProduct(int productId) {
 void PricePoller::onProductAdded(Product product) {
     QMutexLocker lock(&m_mutex);
     m_products[product.id] = product;
-    scheduleProduct(product);
+    if (m_running) {
+        scheduleProduct(product);
+    }
 }
 
 void PricePoller::onProductRemoved(int productId) {
@@ -84,9 +107,12 @@ void PricePoller::onProductRemoved(int productId) {
 }
 
 void PricePoller::checkNow(int productId) {
+    // Intentional copy: must release mutex before blocking network call
     Product product;
+    std::string sourceId;
     {
         QMutexLocker lock(&m_mutex);
+        if (!m_running) return;
         if (!m_products.contains(productId)) {
             emit checkNowFinished(productId, false, 0.0f, 0.0f);
             return;
@@ -94,24 +120,11 @@ void PricePoller::checkNow(int productId) {
         product = m_products[productId];
     }
 
-    std::string sourceId = product.sourcePluginId.empty()
-        ? [&]() -> std::string {
-            switch (product.source) {
-                case SourceType::STEAM:   return "steam";
-                case SourceType::UDEMY:   return "udemy";
-                case SourceType::AMAZON:  return "amazon";
-                default:                  return "generic";
-            }
-        }()
-        : product.sourcePluginId;
+    sourceId = (product.source == SourceType::PLUGIN && !product.sourcePluginId.empty())
+        ? product.sourcePluginId
+        : sourceTypeToId(product.source);
 
-    IPriceHandler* handler = m_pluginManager->handlerFor(sourceId);
-    if (!handler) {
-        emit checkNowFinished(productId, false, 0.0f, 0.0f);
-        return;
-    }
-
-    FetchResult result = handler->fetchProduct(product.url);
+    FetchResult result = m_pluginManager->fetchProduct(sourceId, product.url);
 
     if (result.success) {
         {
@@ -128,9 +141,11 @@ void PricePoller::checkNow(int productId) {
 }
 
 void PricePoller::pollProduct(int productId) {
+    // Intentional copy: must release mutex before blocking network call
     Product product;
     {
         QMutexLocker lock(&m_mutex);
+        if (!m_running) return;
         if (!m_products.contains(productId)) return;
         product = m_products[productId];
     }
@@ -138,24 +153,11 @@ void PricePoller::pollProduct(int productId) {
     if (!product.isActive) return;
 
     // Determine source id: plugin id takes priority over enum
-    std::string sourceId = product.sourcePluginId.empty()
-        ? [&]() -> std::string {
-            switch (product.source) {
-                case SourceType::STEAM:   return "steam";
-                case SourceType::UDEMY:   return "udemy";
-                case SourceType::AMAZON:  return "amazon";
-                default:                  return "generic";
-            }
-        }()
-        : product.sourcePluginId;
+    std::string sourceId = (product.source == SourceType::PLUGIN && !product.sourcePluginId.empty())
+        ? product.sourcePluginId
+        : sourceTypeToId(product.source);
 
-    IPriceHandler* handler = m_pluginManager->handlerFor(sourceId);
-    if (!handler) {
-        Logger::warn("No handler for source: " + sourceId + " (product: " + product.name + ")");
-        return;
-    }
-
-    FetchResult result = handler->fetchProduct(product.url);
+    FetchResult result = m_pluginManager->fetchProduct(sourceId, product.url);
 
     if (result.success) {
         {
@@ -167,5 +169,7 @@ void PricePoller::pollProduct(int productId) {
         }
         emit productPriceChanged(productId, result.price, result.discount);
         emit priceUpdated(product, result);
+    } else if (!result.errorMsg.empty()) {
+        Logger::warn("Fetch failed for " + product.name + ": " + result.errorMsg);
     }
 }
