@@ -6,7 +6,7 @@
 #include <QSpinBox>
 #include <QComboBox>
 #include <QLabel>
-#include <QVBoxLayout>
+#include <QTabWidget>
 
 class PluginManager;
 
@@ -22,12 +22,16 @@ private slots:
 
 private:
     void setupUi();
-    void setupPluginsSection(QVBoxLayout* mainLayout);
+    QWidget* createGeneralTab();
+    QWidget* createApiKeysTab();
+    QWidget* createPluginsTab();
     void loadSettings();
 
     PluginManager* m_pluginManager = nullptr;
 
     bool m_restartNeeded = false;
+
+    QTabWidget* m_tabWidget;
 
     // Steam (no credentials needed — public API)
     // Udemy

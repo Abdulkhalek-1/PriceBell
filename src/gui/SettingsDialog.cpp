@@ -15,13 +15,12 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QComboBox>
-#include <QScrollArea>
 
 SettingsDialog::SettingsDialog(QWidget* parent, PluginManager* pluginManager)
     : QDialog(parent), m_pluginManager(pluginManager)
 {
     setWindowTitle(tr("Settings"));
-    resize(480, 600);
+    resize(520, 480);
     setupUi();
     loadSettings();
 }
@@ -30,99 +29,12 @@ void SettingsDialog::setupUi() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(12, 14, 12, 12);
 
-    // -- Startup ------------------------------------------------------------------
-    QGroupBox* startupGroup = new QGroupBox(tr("Startup"), this);
-    QVBoxLayout* startupLayout = new QVBoxLayout(startupGroup);
-    m_autoStartCheck = new QCheckBox(tr("Open on Startup"), this);
-    m_autoStartCheck->setToolTip(tr("Automatically launch PriceBell when you log in"));
-    startupLayout->addWidget(m_autoStartCheck);
-    mainLayout->addWidget(startupGroup);
+    m_tabWidget = new QTabWidget(this);
+    m_tabWidget->addTab(createGeneralTab(),  tr("General"));
+    m_tabWidget->addTab(createApiKeysTab(),  tr("API Keys"));
+    m_tabWidget->addTab(createPluginsTab(),  tr("Plugins"));
+    mainLayout->addWidget(m_tabWidget);
 
-    // -- Updates ------------------------------------------------------------------
-    QGroupBox* updateGroup = new QGroupBox(tr("Updates"), this);
-    QVBoxLayout* updateLayout = new QVBoxLayout(updateGroup);
-    m_autoUpdateCheck = new QCheckBox(tr("Check for updates on startup"), this);
-    m_autoUpdateCheck->setToolTip(tr("Automatically check for new versions when the app starts"));
-    updateLayout->addWidget(m_autoUpdateCheck);
-    mainLayout->addWidget(updateGroup);
-
-    // -- Notifications ------------------------------------------------------------
-    QGroupBox* notifGroup = new QGroupBox(tr("Notifications"), this);
-    QVBoxLayout* notifLayout = new QVBoxLayout(notifGroup);
-    m_notificationSoundCheck = new QCheckBox(tr("Play notification sound"), this);
-    m_notificationSoundCheck->setToolTip(tr("Play a sound when a price alert is triggered"));
-    notifLayout->addWidget(m_notificationSoundCheck);
-    mainLayout->addWidget(notifGroup);
-
-    // -- Udemy --------------------------------------------------------------------
-    QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), this);
-    QFormLayout* udemyForm = new QFormLayout(udemyGroup);
-    m_udemyClientId     = new QLineEdit(this);
-    m_udemyClientId->setToolTip(tr("Required for Udemy price tracking"));
-    m_udemyClientSecret = new QLineEdit(this);
-    m_udemyClientSecret->setEchoMode(QLineEdit::Password);
-    m_udemyClientSecret->setToolTip(tr("Required for Udemy price tracking"));
-    udemyForm->addRow(tr("Client ID:"),     m_udemyClientId);
-    udemyForm->addRow(tr("Client Secret:"), m_udemyClientSecret);
-    mainLayout->addWidget(udemyGroup);
-
-    // -- Amazon -------------------------------------------------------------------
-    QGroupBox* amazonGroup = new QGroupBox(tr("Amazon PA API Credentials"), this);
-    QFormLayout* amazonForm = new QFormLayout(amazonGroup);
-    m_amazonAccessKey  = new QLineEdit(this);
-    m_amazonAccessKey->setToolTip(tr("Required for Amazon price tracking"));
-    m_amazonSecretKey  = new QLineEdit(this);
-    m_amazonSecretKey->setEchoMode(QLineEdit::Password);
-    m_amazonSecretKey->setToolTip(tr("Required for Amazon price tracking"));
-    m_amazonPartnerTag = new QLineEdit(this);
-    m_amazonPartnerTag->setToolTip(tr("Required for Amazon price tracking"));
-    amazonForm->addRow(tr("Access Key:"),  m_amazonAccessKey);
-    amazonForm->addRow(tr("Secret Key:"),  m_amazonSecretKey);
-    amazonForm->addRow(tr("Partner Tag:"), m_amazonPartnerTag);
-    mainLayout->addWidget(amazonGroup);
-
-    // -- Polling ------------------------------------------------------------------
-    QGroupBox* pollingGroup = new QGroupBox(tr("Polling"), this);
-    QFormLayout* pollingForm = new QFormLayout(pollingGroup);
-    m_defaultInterval = new QSpinBox(this);
-    m_defaultInterval->setRange(30, 86400);
-    m_defaultInterval->setSuffix(tr(" sec"));
-    m_defaultInterval->setValue(3600);
-    m_defaultInterval->setToolTip(tr("Default interval for new products (30s – 24h)"));
-    pollingForm->addRow(tr("Default Check Interval:"), m_defaultInterval);
-    mainLayout->addWidget(pollingGroup);
-
-    // -- Plugin directory ---------------------------------------------------------
-    QGroupBox* pluginGroup = new QGroupBox(tr("Plugin Directory"), this);
-    QHBoxLayout* pluginLayout = new QHBoxLayout(pluginGroup);
-    m_pluginDir = new QLineEdit(this);
-    m_pluginDir->setToolTip(tr("Directory to scan for native price handler plugins"));
-    QPushButton* browseBtn = new QPushButton(tr("Browse…"), this);
-    browseBtn->setToolTip(tr("Choose plugin directory"));
-    pluginLayout->addWidget(m_pluginDir);
-    pluginLayout->addWidget(browseBtn);
-    mainLayout->addWidget(pluginGroup);
-    connect(browseBtn, &QPushButton::clicked, this, [this]() {
-        QString dir = QFileDialog::getExistingDirectory(this, tr("Select Plugin Directory"));
-        if (!dir.isEmpty()) m_pluginDir->setText(dir);
-    });
-
-    // -- Language -----------------------------------------------------------------
-    QGroupBox* langGroup = new QGroupBox(tr("Language"), this);
-    QFormLayout* langForm = new QFormLayout(langGroup);
-    m_languageCombo = new QComboBox(this);
-    m_languageCombo->setToolTip(tr("Application display language (requires restart)"));
-    m_languageCombo->addItem("English", "en");
-    m_languageCombo->addItem(QString::fromUtf8("\330\247\331\204\330\271\330\261\330\250\331\212\330\251"), "ar");
-    m_languageCombo->addItem(QString::fromUtf8("Fran\303\247ais"), "fr");
-    m_languageLabel = new QLabel(this);
-    langForm->addRow(tr("Language:"), m_languageCombo);
-    mainLayout->addWidget(langGroup);
-
-    // -- Plugins ------------------------------------------------------------------
-    setupPluginsSection(mainLayout);
-
-    // -- Buttons ------------------------------------------------------------------
     QDialogButtonBox* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     mainLayout->addWidget(buttons);
@@ -130,56 +42,166 @@ void SettingsDialog::setupUi() {
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
-void SettingsDialog::setupPluginsSection(QVBoxLayout* mainLayout) {
-    QGroupBox* pluginsGroup = new QGroupBox(tr("Plugins"), this);
+QWidget* SettingsDialog::createGeneralTab() {
+    QWidget* page = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(8, 18, 8, 8);
+
+    // -- Startup ------------------------------------------------------------------
+    QGroupBox* startupGroup = new QGroupBox(tr("Startup"), page);
+    QVBoxLayout* startupLayout = new QVBoxLayout(startupGroup);
+    m_autoStartCheck = new QCheckBox(tr("Open on Startup"), page);
+    m_autoStartCheck->setToolTip(tr("Automatically launch PriceBell when you log in"));
+    startupLayout->addWidget(m_autoStartCheck);
+    layout->addWidget(startupGroup);
+
+    // -- Updates ------------------------------------------------------------------
+    QGroupBox* updateGroup = new QGroupBox(tr("Updates"), page);
+    QVBoxLayout* updateLayout = new QVBoxLayout(updateGroup);
+    m_autoUpdateCheck = new QCheckBox(tr("Check for updates on startup"), page);
+    m_autoUpdateCheck->setToolTip(tr("Automatically check for new versions when the app starts"));
+    updateLayout->addWidget(m_autoUpdateCheck);
+    layout->addWidget(updateGroup);
+
+    // -- Notifications ------------------------------------------------------------
+    QGroupBox* notifGroup = new QGroupBox(tr("Notifications"), page);
+    QVBoxLayout* notifLayout = new QVBoxLayout(notifGroup);
+    m_notificationSoundCheck = new QCheckBox(tr("Play notification sound"), page);
+    m_notificationSoundCheck->setToolTip(tr("Play a sound when a price alert is triggered"));
+    notifLayout->addWidget(m_notificationSoundCheck);
+    layout->addWidget(notifGroup);
+
+    // -- Polling ------------------------------------------------------------------
+    QGroupBox* pollingGroup = new QGroupBox(tr("Polling"), page);
+    QFormLayout* pollingForm = new QFormLayout(pollingGroup);
+    m_defaultInterval = new QSpinBox(page);
+    m_defaultInterval->setRange(30, 86400);
+    m_defaultInterval->setSuffix(tr(" sec"));
+    m_defaultInterval->setValue(3600);
+    m_defaultInterval->setToolTip(tr("Default interval for new products (30s – 24h)"));
+    pollingForm->addRow(tr("Default Check Interval:"), m_defaultInterval);
+    layout->addWidget(pollingGroup);
+
+    // -- Language -----------------------------------------------------------------
+    QGroupBox* langGroup = new QGroupBox(tr("Language"), page);
+    QFormLayout* langForm = new QFormLayout(langGroup);
+    m_languageCombo = new QComboBox(page);
+    m_languageCombo->setToolTip(tr("Application display language (requires restart)"));
+    m_languageCombo->addItem("English", "en");
+    m_languageCombo->addItem(QString::fromUtf8("\330\247\331\204\330\271\330\261\330\250\331\212\330\251"), "ar");
+    m_languageCombo->addItem(QString::fromUtf8("Fran\303\247ais"), "fr");
+    m_languageLabel = new QLabel(page);
+    langForm->addRow(tr("Language:"), m_languageCombo);
+    layout->addWidget(langGroup);
+
+    layout->addStretch();
+    return page;
+}
+
+QWidget* SettingsDialog::createApiKeysTab() {
+    QWidget* page = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(8, 18, 8, 8);
+
+    // -- Udemy --------------------------------------------------------------------
+    QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), page);
+    QFormLayout* udemyForm = new QFormLayout(udemyGroup);
+    m_udemyClientId = new QLineEdit(page);
+    m_udemyClientId->setToolTip(tr("Required for Udemy price tracking"));
+    m_udemyClientSecret = new QLineEdit(page);
+    m_udemyClientSecret->setEchoMode(QLineEdit::Password);
+    m_udemyClientSecret->setToolTip(tr("Required for Udemy price tracking"));
+    udemyForm->addRow(tr("Client ID:"),     m_udemyClientId);
+    udemyForm->addRow(tr("Client Secret:"), m_udemyClientSecret);
+    layout->addWidget(udemyGroup);
+
+    // -- Amazon -------------------------------------------------------------------
+    QGroupBox* amazonGroup = new QGroupBox(tr("Amazon PA API Credentials"), page);
+    QFormLayout* amazonForm = new QFormLayout(amazonGroup);
+    m_amazonAccessKey = new QLineEdit(page);
+    m_amazonAccessKey->setToolTip(tr("Required for Amazon price tracking"));
+    m_amazonSecretKey = new QLineEdit(page);
+    m_amazonSecretKey->setEchoMode(QLineEdit::Password);
+    m_amazonSecretKey->setToolTip(tr("Required for Amazon price tracking"));
+    m_amazonPartnerTag = new QLineEdit(page);
+    m_amazonPartnerTag->setToolTip(tr("Required for Amazon price tracking"));
+    amazonForm->addRow(tr("Access Key:"),  m_amazonAccessKey);
+    amazonForm->addRow(tr("Secret Key:"),  m_amazonSecretKey);
+    amazonForm->addRow(tr("Partner Tag:"), m_amazonPartnerTag);
+    layout->addWidget(amazonGroup);
+
+    layout->addStretch();
+    return page;
+}
+
+QWidget* SettingsDialog::createPluginsTab() {
+    QWidget* page = new QWidget(this);
+    QVBoxLayout* layout = new QVBoxLayout(page);
+    layout->setContentsMargins(8, 18, 8, 8);
+
+    // -- Plugin directory ---------------------------------------------------------
+    QGroupBox* dirGroup = new QGroupBox(tr("Plugin Directory"), page);
+    QHBoxLayout* dirLayout = new QHBoxLayout(dirGroup);
+    m_pluginDir = new QLineEdit(page);
+    m_pluginDir->setToolTip(tr("Directory to scan for native price handler plugins"));
+    QPushButton* browseBtn = new QPushButton(tr("Browse…"), page);
+    browseBtn->setToolTip(tr("Choose plugin directory"));
+    dirLayout->addWidget(m_pluginDir);
+    dirLayout->addWidget(browseBtn);
+    layout->addWidget(dirGroup);
+    connect(browseBtn, &QPushButton::clicked, this, [this]() {
+        QString dir = QFileDialog::getExistingDirectory(this, tr("Select Plugin Directory"));
+        if (!dir.isEmpty()) m_pluginDir->setText(dir);
+    });
+
+    // -- Loaded plugins -----------------------------------------------------------
+    QGroupBox* pluginsGroup = new QGroupBox(tr("Loaded Plugins"), page);
     QVBoxLayout* pluginsLayout = new QVBoxLayout(pluginsGroup);
 
     if (!m_pluginManager) {
-        QLabel* noAccess = new QLabel(tr("No plugins loaded"), this);
+        QLabel* noAccess = new QLabel(tr("No plugins loaded"), page);
         noAccess->setAlignment(Qt::AlignCenter);
         pluginsLayout->addWidget(noAccess);
-        mainLayout->addWidget(pluginsGroup);
-        return;
-    }
+    } else {
+        auto sources = m_pluginManager->availableSources();
+        if (sources.empty()) {
+            QLabel* emptyLabel = new QLabel(tr("No plugins loaded"), page);
+            emptyLabel->setAlignment(Qt::AlignCenter);
+            pluginsLayout->addWidget(emptyLabel);
+        } else {
+            for (const auto& src : sources) {
+                QString name = QString::fromStdString(src.name);
+                QString id   = QString::fromStdString(src.id);
+                QString type = src.isDeveloperPlugin ? tr("Plugin") : tr("Built-in");
 
-    auto sources = m_pluginManager->availableSources();
-    if (sources.empty()) {
-        QLabel* emptyLabel = new QLabel(tr("No plugins loaded"), this);
-        emptyLabel->setAlignment(Qt::AlignCenter);
-        pluginsLayout->addWidget(emptyLabel);
-        mainLayout->addWidget(pluginsGroup);
-        return;
-    }
+                QGroupBox* entry = new QGroupBox(name, page);
+                QVBoxLayout* entryLayout = new QVBoxLayout(entry);
 
-    for (const auto& src : sources) {
-        QString name = QString::fromStdString(src.name);
-        QString id   = QString::fromStdString(src.id);
-        QString type = src.isDeveloperPlugin ? tr("Plugin") : tr("Built-in");
+                QLabel* info = new QLabel(
+                    tr("ID: %1  |  Type: %2").arg(id, type), page);
+                entryLayout->addWidget(info);
 
-        QGroupBox* entry = new QGroupBox(name, this);
-        QVBoxLayout* entryLayout = new QVBoxLayout(entry);
-
-        QLabel* info = new QLabel(
-            tr("ID: %1  |  Type: %2").arg(id, type), this);
-        entryLayout->addWidget(info);
-
-        // For IPlugin2 plugins, embed their settings widget if available
-        if (src.isDeveloperPlugin) {
-            IPriceHandler* handler = m_pluginManager->handlerFor(src.id);
-            IPlugin2* p2 = dynamic_cast<IPlugin2*>(handler);
-            if (p2) {
-                QWidget* sw = p2->settingsWidget();
-                if (sw) {
-                    sw->setParent(this);
-                    entryLayout->addWidget(sw);
+                // For IPlugin2 plugins, embed their settings widget if available
+                if (src.isDeveloperPlugin) {
+                    IPriceHandler* handler = m_pluginManager->handlerFor(src.id);
+                    IPlugin2* p2 = dynamic_cast<IPlugin2*>(handler);
+                    if (p2) {
+                        QWidget* sw = p2->settingsWidget();
+                        if (sw) {
+                            sw->setParent(this);
+                            entryLayout->addWidget(sw);
+                        }
+                    }
                 }
+
+                pluginsLayout->addWidget(entry);
             }
         }
-
-        pluginsLayout->addWidget(entry);
     }
+    layout->addWidget(pluginsGroup);
 
-    mainLayout->addWidget(pluginsGroup);
+    layout->addStretch();
+    return page;
 }
 
 void SettingsDialog::loadSettings() {
