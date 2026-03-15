@@ -1,4 +1,6 @@
 #include "gui/SettingsDialog.hpp"
+#include "core/PluginManager.hpp"
+#include "core/IPlugin2.hpp"
 #include "utils/AutoStartManager.hpp"
 #include "utils/SettingsProvider.hpp"
 
@@ -13,12 +15,13 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QComboBox>
+#include <QScrollArea>
 
-SettingsDialog::SettingsDialog(QWidget* parent)
-    : QDialog(parent)
+SettingsDialog::SettingsDialog(QWidget* parent, PluginManager* pluginManager)
+    : QDialog(parent), m_pluginManager(pluginManager)
 {
     setWindowTitle(tr("Settings"));
-    resize(480, 560);
+    resize(480, 600);
     setupUi();
     loadSettings();
 }
@@ -116,12 +119,67 @@ void SettingsDialog::setupUi() {
     langForm->addRow(tr("Language:"), m_languageCombo);
     mainLayout->addWidget(langGroup);
 
+    // -- Plugins ------------------------------------------------------------------
+    setupPluginsSection(mainLayout);
+
     // -- Buttons ------------------------------------------------------------------
     QDialogButtonBox* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     mainLayout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::accepted, this, &SettingsDialog::saveSettings);
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
+}
+
+void SettingsDialog::setupPluginsSection(QVBoxLayout* mainLayout) {
+    QGroupBox* pluginsGroup = new QGroupBox(tr("Plugins"), this);
+    QVBoxLayout* pluginsLayout = new QVBoxLayout(pluginsGroup);
+
+    if (!m_pluginManager) {
+        QLabel* noAccess = new QLabel(tr("No plugins loaded"), this);
+        noAccess->setAlignment(Qt::AlignCenter);
+        pluginsLayout->addWidget(noAccess);
+        mainLayout->addWidget(pluginsGroup);
+        return;
+    }
+
+    auto sources = m_pluginManager->availableSources();
+    if (sources.empty()) {
+        QLabel* emptyLabel = new QLabel(tr("No plugins loaded"), this);
+        emptyLabel->setAlignment(Qt::AlignCenter);
+        pluginsLayout->addWidget(emptyLabel);
+        mainLayout->addWidget(pluginsGroup);
+        return;
+    }
+
+    for (const auto& src : sources) {
+        QString name = QString::fromStdString(src.name);
+        QString id   = QString::fromStdString(src.id);
+        QString type = src.isDeveloperPlugin ? tr("Plugin") : tr("Built-in");
+
+        QGroupBox* entry = new QGroupBox(name, this);
+        QVBoxLayout* entryLayout = new QVBoxLayout(entry);
+
+        QLabel* info = new QLabel(
+            tr("ID: %1  |  Type: %2").arg(id, type), this);
+        entryLayout->addWidget(info);
+
+        // For IPlugin2 plugins, embed their settings widget if available
+        if (src.isDeveloperPlugin) {
+            IPriceHandler* handler = m_pluginManager->handlerFor(src.id);
+            IPlugin2* p2 = dynamic_cast<IPlugin2*>(handler);
+            if (p2) {
+                QWidget* sw = p2->settingsWidget();
+                if (sw) {
+                    sw->setParent(this);
+                    entryLayout->addWidget(sw);
+                }
+            }
+        }
+
+        pluginsLayout->addWidget(entry);
+    }
+
+    mainLayout->addWidget(pluginsGroup);
 }
 
 void SettingsDialog::loadSettings() {

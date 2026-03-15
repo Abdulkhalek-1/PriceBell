@@ -1,10 +1,12 @@
 #pragma once
 
 #include "core/IPriceHandler.hpp"
+#include "core/IPlugin2.hpp"
 #include "core/DataStructs.hpp"
 
 #include <QString>
 #include <QStringList>
+#include <QList>
 #include <QMap>
 #include <QJsonObject>
 #include <memory>
@@ -42,6 +44,9 @@ public:
 
     // Returns metadata for all registered handlers (for UI source selector).
     std::vector<SourceConfig> availableSources() const;
+
+    // Returns all plugins that implement the IPlugin2 extended interface.
+    QList<IPlugin2*> plugin2Interfaces() const;
 
     // Validates that a plugin's declared metadata is safe to load.
     static bool validatePluginMetadata(const QJsonObject& meta);
