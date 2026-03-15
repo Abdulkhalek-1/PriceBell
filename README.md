@@ -1,100 +1,74 @@
-# **PriceBell** - Price Tracker Application
+# PriceBell
 
-PriceBell is a price tracker application that monitors prices and discounts of various products from platforms like Steam and Udemy. Users can set filters based on price or discount, specify the check interval, and track products in real-time. The application provides a GUI to manage products, set filters, and view product information.
+A desktop price tracking application that monitors product prices across Steam, Udemy, Amazon, and custom sources. Get notified when prices drop below your thresholds or discounts reach your targets.
+
+Built with C++17 and Qt5. Runs on Linux, macOS, and Windows.
 
 ## Features
 
-- **Add Products**: Add products from sources like Steam, Udemy, etc.
-- **Filters**: Apply filters on price (e.g., "Price >= $100") and discount (e.g., "Discount >= 20%").
-- **Check Interval**: Set the time interval for checking price updates.
-- **GUI Interface**: Manage products and filters through a user-friendly graphical interface built with Qt.
-- **Remove Products**: Remove selected products from the tracking list.
+- **Multi-source tracking** -- Monitor prices from Steam, Udemy, Amazon, and user-configured sources
+- **Alert conditions** -- Set price and discount thresholds with AND logic (all conditions must be met)
+- **Desktop notifications** -- System tray alerts when conditions are triggered
+- **Alert history** -- Review and dismiss past alerts
+- **Background polling** -- Per-product check intervals from 30 seconds to 24 hours
+- **Plugin system** -- Extend with native C++ plugins (.so/.dll) or JSON-configured sources
+- **Dark theme** -- Catppuccin Mocha palette applied by default
+- **System tray** -- Minimizes to tray on close, runs in background
+- **SQLite persistence** -- Products, conditions, and alert history stored locally
+- **Internationalization** -- English, Arabic (RTL), and French translations
 
-## Prerequisites
-
-- **Qt 5** or later
-- **CMake** 3.x or later
-- **C++** compiler (GCC or Clang)
-- **CMake** to build the project
-
-## Getting Started
-
-### 1. Clone the Repository
+## Quick Start
 
 ```bash
 git clone https://github.com/Abdulkhalek-1/PriceBell.git
 cd PriceBell
-```
-
-### 2. Install Dependencies
-
-Make sure you have **Qt 5** and **CMake** installed. On Linux, you can install them using your package manager.
-
-#### For Ubuntu/Debian-based systems:
-```bash
-sudo apt update
-sudo apt install qt5-qmake qtbase5-dev qtchooser cmake build-essential
-```
-
-#### For Arch Linux:
-```bash
-sudo pacman -S qt5-base qt5-tools cmake base-devel
-```
-
-### 3. Build the Project
-
-Create a build directory and compile the application:
-
-```bash
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
-make
-```
-
-### 4. Run the Application
-
-Once the build is complete, you can run the application:
-
-```bash
+make -j$(nproc)
 ./PriceBell
 ```
 
+See [docs/BUILDING.md](docs/BUILDING.md) for prerequisites and platform-specific instructions.
+
 ## Usage
 
-1. **Add Product**: Click "Add Product" from the menu or use the button to open a dialog and input product details (name, source, filters, and check interval).
-2. **Product List**: The main window displays a table of all added products with details like name, source, price, discount, and check interval.
-3. **Remove Product**: Select a product from the table and click "Remove Product" to delete it.
-4. **Filters**: Apply filters like price >= $100 or discount >= 20% when adding products.
-5. **Check Interval**: Set the interval (in seconds) to check product prices.
+1. **Add a product** -- Click "+ Add Product", enter the name, URL, source, alert conditions, and check interval
+2. **Monitor** -- The app polls prices in the background and updates the product table
+3. **Get notified** -- When alert conditions are met, a tray notification appears and the table row highlights
+4. **Review alerts** -- Open Alert History to see triggered alerts and dismiss them
+5. **Configure** -- Use Settings to enter API credentials (Udemy, Amazon), adjust polling defaults, and set the plugin directory
+
+See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full walkthrough.
+
+## Documentation
+
+| Document | Description |
+| -------- | ----------- |
+| [Building](docs/BUILDING.md) | Prerequisites, build steps, running tests |
+| [Architecture](docs/ARCHITECTURE.md) | System design, data flow, SQLite schema, plugin system |
+| [User Guide](docs/USER_GUIDE.md) | Installation, adding products, alerts, settings |
+| [Plugins](docs/PLUGINS.md) | Native plugin and JSON config source development |
+| [Handlers](docs/HANDLERS.md) | How to add a new built-in price handler |
+| [Contributing](CONTRIBUTING.md) | Code style, PR workflow, testing |
 
 ## Project Structure
 
-```bash
+```text
 PriceBell/
-├── CMakeLists.txt          # CMake build file
-├── README.md               # Project documentation
 ├── include/
-│   ├── core/               # Core functionality (data structs, price checks)
-│   └── gui/                # Qt GUI components
-├── src/
-│   ├── core/               # Core logic implementation
-│   └── gui/                # GUI implementation
-└── build/                  # Build directory (generated)
+│   ├── core/           # Business logic (PriceChecker, AlertManager, PricePoller, PluginManager)
+│   ├── handlers/       # Price source handlers (Steam, Udemy, Amazon, Generic)
+│   ├── storage/        # SQLite persistence (Database, ProductRepository, AlertRepository)
+│   ├── gui/            # Qt UI components (MainWindow, ProductDialog, SettingsDialog, TrayIcon)
+│   └── utils/          # Logger, HttpClient
+├── src/                # Implementation files (mirrors include/ structure)
+├── tests/              # Test suite (PriceChecker, Repository)
+├── assets/             # Logo, tray icons, dark theme stylesheet
+├── i18n/               # Translation files (.ts)
+├── docs/               # Documentation
+└── CMakeLists.txt
 ```
-
-## Contributing
-
-1. Fork this repository.
-2. Create your feature branch (`git checkout -b feature/my-feature`).
-3. Commit your changes (`git commit -am 'Add some feature'`).
-4. Push to the branch (`git push origin feature/my-feature`).
-5. Open a pull request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-Feel free to modify the **Installation** or **Usage** steps according to any specific details related to your project. You can also add any additional features you might want to highlight in the **Features** section.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
