@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#\!/usr/bin/env bash
 set -euo pipefail
 
 if [ $# -ne 1 ]; then
@@ -9,19 +9,16 @@ fi
 VERSION="$1"
 TAG="v${VERSION}"
 
-# Validate semver format
-if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+if \! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
     echo "Error: Version must be in X.Y.Z format"
     exit 1
 fi
 
-# Check for clean working tree
-if ! git diff --quiet HEAD; then
+if \! git diff --quiet HEAD; then
     echo "Error: Working tree is dirty. Commit or stash changes first."
     exit 1
 fi
 
-# Update version in CMakeLists.txt
 sed -i "s/project(PriceBell VERSION [0-9]\+\.[0-9]\+\.[0-9]\+/project(PriceBell VERSION ${VERSION}/" CMakeLists.txt
 
 git add CMakeLists.txt
