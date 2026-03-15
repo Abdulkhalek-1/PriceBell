@@ -1,4 +1,5 @@
 #include "gui/SettingsDialog.hpp"
+#include "utils/AutoStartManager.hpp"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -23,6 +24,21 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
 void SettingsDialog::setupUi() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(12, 14, 12, 12);
+
+    // ── Startup ──────────────────────────────────────────────────────────────
+    QGroupBox* startupGroup = new QGroupBox(tr("Startup"), this);
+    QVBoxLayout* startupLayout = new QVBoxLayout(startupGroup);
+    m_autoStartCheck = new QCheckBox(tr("Open on Startup"), this);
+    startupLayout->addWidget(m_autoStartCheck);
+    mainLayout->addWidget(startupGroup);
+
+    // ── Updates ─────────────────────────────────────────────────────────────────
+    QGroupBox* updateGroup = new QGroupBox(tr("Updates"), this);
+    QVBoxLayout* updateLayout = new QVBoxLayout(updateGroup);
+    m_autoUpdateCheck = new QCheckBox(tr("Check for updates on startup"), this);
+    updateLayout->addWidget(m_autoUpdateCheck);
+    mainLayout->addWidget(updateGroup);
 
     // ── Udemy ─────────────────────────────────────────────────────────────────
     QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), this);
@@ -102,6 +118,9 @@ void SettingsDialog::loadSettings() {
     QString lang = s.value("language", "en").toString();
     int langIdx = m_languageCombo->findData(lang);
     if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
+
+    m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
+    m_autoUpdateCheck->setChecked(s.value("updates/check_on_startup", true).toBool());
 }
 
 void SettingsDialog::saveSettings() {
@@ -113,14 +132,22 @@ void SettingsDialog::saveSettings() {
     s.setValue("amazon/partner_tag",        m_amazonPartnerTag->text());
     s.setValue("polling/default_interval",  m_defaultInterval->value());
     s.setValue("plugins/directory",         m_pluginDir->text());
+    s.setValue("updates/check_on_startup",  m_autoUpdateCheck->isChecked());
 
     QString newLang = m_languageCombo->currentData().toString();
     QString oldLang = s.value("language", "en").toString();
     s.setValue("language", newLang);
 
     if (newLang != oldLang) {
-        QMessageBox::information(this, tr("Language"),
-            tr("Language change will take effect after restarting PriceBell."));
+        m_restartNeeded = true;
+    }
+
+    bool wantAutoStart = m_autoStartCheck->isChecked();
+    if (wantAutoStart != AutoStartManager::isEnabled()) {
+        if (!AutoStartManager::setEnabled(wantAutoStart)) {
+            QMessageBox::warning(this, tr("Auto-start"),
+                tr("Failed to update auto-start setting."));
+        }
     }
 
     accept();

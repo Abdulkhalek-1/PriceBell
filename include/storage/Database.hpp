@@ -18,6 +18,8 @@ public:
 
 private:
     static bool applySchema();
+    static int  getSchemaVersion();
+    static bool applyMigrations();
     static QString defaultPath();
 
     static constexpr const char* kConnectionName = "pricebell";

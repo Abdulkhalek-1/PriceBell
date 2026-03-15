@@ -3,9 +3,13 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+env:
+  VERSION: ${{ github.ref_name }}
 
 jobs:
   linux-appimage:
@@ -59,13 +63,13 @@ jobs:
             --output appimage \
             --desktop-file PriceBell.desktop \
             --icon-file pricebell.png
-          mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-linux-x86_64.AppImage
+          mv PriceBell-*.AppImage PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64
-          path: PriceBell-${{ github.ref_name }}-linux-x86_64.AppImage
+          path: PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
 
   windows:
     runs-on: windows-latest
@@ -90,6 +94,9 @@ jobs:
           version: '5.15.2'
           arch: ${{ matrix.qt_arch }}
 
+      - name: Install OpenSSL 1.1
+        run: choco install openssl --version=1.1.1.2100 -y --no-progress
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -106,7 +113,7 @@ jobs:
       - name: Package
         shell: pwsh
         run: |
-          $tag = "${{ github.ref_name }}"
+          $tag = "${{ env.VERSION }}"
           $arch = "${{ matrix.arch }}"
           $dir = "PriceBell-${tag}-windows-${arch}"
 
@@ -120,15 +127,26 @@ jobs:
           # Bundle Qt DLLs
           windeployqt --release --no-translations --no-opengl-sw "$dir/PriceBell.exe"
 
+          # Bundle OpenSSL 1.1.x DLLs (required by Qt 5.15 for HTTPS)
+          $sslBin = "C:\Program Files\OpenSSL\bin"
+          if (Test-Path "$sslBin\libssl-1_1*.dll") {
+              Copy-Item "$sslBin\libssl-1_1*.dll" "$dir/"
+              Copy-Item "$sslBin\libcrypto-1_1*.dll" "$dir/"
+              Write-Host "Copied OpenSSL 1.1 DLLs from $sslBin"
+          } else {
+              Write-Warning "OpenSSL 1.1 DLLs not found — HTTPS will not work"
+          }
+
           Compress-Archive -Path $dir -DestinationPath "PriceBell-${tag}-windows-${arch}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}
-          path: PriceBell-${{ github.ref_name }}-windows-${{ matrix.arch }}.zip
+          path: PriceBell-${{ env.VERSION }}-windows-${{ matrix.arch }}.zip
 
   publish:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     needs: [linux-appimage, windows]
 
@@ -164,7 +182,7 @@ jobs:
   fallback:
     runs-on: ubuntu-22.04
     needs: publish
-    if: failure()
+    if: failure() && startsWith(github.ref, 'refs/tags/v')
 
     steps:
       - uses: actions/checkout@v4

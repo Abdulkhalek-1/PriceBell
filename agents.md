@@ -38,20 +38,20 @@ PriceBell/
 │   └── pricebell_fr.ts
 ├── include/
 │   ├── core/
-│   │   ├── DataStructs.hpp      # Product, FetchResult, AlertEvent, SourceType, etc.
+│   │   ├── DataStructs.hpp      # Product, FetchResult, AlertEvent, SourceType, RESTART_EXIT_CODE
 │   │   ├── IApplication.hpp     # App interface
 │   │   ├── IPriceHandler.hpp    # Strategy interface for price sources
 │   │   ├── IPlugin.hpp          # Plugin interface for native .so/.dll extensions
 │   │   ├── AlertManager.hpp     # Price-drop notification engine
 │   │   ├── PluginManager.hpp    # Dynamic plugin loader
 │   │   ├── PriceChecker.hpp     # Filter matching logic
-│   │   ├── PricePoller.hpp      # Background polling thread
+│   │   ├── PricePoller.hpp      # Background polling thread (+ checkNow slot)
 │   │   └── SteamHandler.hpp     # Legacy Steam handler (see handlers/)
 │   ├── gui/
-│   │   ├── MainWindow.hpp       # Main window with product table
+│   │   ├── MainWindow.hpp       # Main window with product table, Check Now, update checker
 │   │   ├── ProductDialog.hpp    # Add/edit product dialog
 │   │   ├── AlertHistoryDialog.hpp # View past alerts
-│   │   ├── SettingsDialog.hpp   # Language & notification preferences
+│   │   ├── SettingsDialog.hpp   # Settings with auto-start, updates, language, API keys
 │   │   ├── TrayIcon.hpp         # System tray with context menu
 │   │   └── Widgets.hpp          # Widget helpers
 │   ├── handlers/
@@ -64,15 +64,17 @@ PriceBell/
 │   │   ├── ProductRepository.hpp
 │   │   └── AlertRepository.hpp
 │   └── utils/
+│       ├── AutoStartManager.hpp # OS-level auto-start (Linux .desktop, macOS plist, Win registry)
 │       ├── HttpClient.hpp       # Async HTTP via QNetworkAccessManager
-│       └── Logger.hpp           # File + console logger
+│       ├── Logger.hpp           # File + console logger
+│       └── UpdateChecker.hpp    # GitHub Releases API update checker
 ├── src/                         # Implementations mirror include/ layout
 │   ├── core/
 │   ├── gui/
 │   ├── handlers/
 │   ├── storage/
 │   ├── utils/
-│   └── main.cpp                 # Entry point (DB init, i18n, RTL, tray)
+│   └── main.cpp                 # Entry point (restart loop, DB init, i18n, RTL, tray)
 ├── tests/
 │   ├── test_main.cpp
 │   ├── test_price_checker.cpp
@@ -90,6 +92,8 @@ PriceBell/
 Defined in `include/core/DataStructs.hpp`:
 
 ```cpp
+static constexpr int RESTART_EXIT_CODE = 1000; // Used by main() restart loop
+
 enum class ConditionType { PRICE_LESS_EQUAL, DISCOUNT_GREATER_EQUAL };
 enum class SourceType    { STEAM, UDEMY, AMAZON, GENERIC, PLUGIN };
 enum class AlertStatus   { TRIGGERED, DISMISSED };
@@ -129,6 +133,8 @@ All types registered with `Q_DECLARE_METATYPE` for cross-thread signal delivery.
 - **Alert Engine**: `AlertManager` evaluates `PriceCondition` filters against `FetchResult` and fires `AlertEvent` signals.
 - **MVC Separation**: `core/` + `handlers/` + `storage/` = model/controller, `gui/` = view, `utils/` = cross-cutting.
 - **System Tray**: App minimizes to tray on close; `TrayIcon` shows desktop notifications and context menu.
+- **Restart Loop**: `main()` wraps `QApplication` in a `do...while(exitCode == RESTART_EXIT_CODE)` loop. Language changes or File > Restart trigger a clean restart.
+- **Database Migrations**: Versioned migrations via `schema_version` table. Each migration is a lambda in a `QVector`, executed sequentially in transactions.
 
 ---
 
@@ -151,7 +157,7 @@ All implement `IPriceHandler::fetchProduct(url) → FetchResult`.
 
 ### `PricePoller` — `src/core/PricePoller.cpp`
 
-Runs on a background `QThread`. Iterates active products by check interval, calls the appropriate handler, emits `priceChanged(productId, price, discount)`.
+Runs on a background `QThread`. Iterates active products by check interval, calls the appropriate handler, emits `priceChanged(productId, price, discount)`. Also provides `checkNow(productId)` slot for on-demand price checks invoked via `QMetaObject::invokeMethod` with `Qt::QueuedConnection`.
 
 ### `AlertManager` — `src/core/AlertManager.cpp`
 
@@ -163,13 +169,13 @@ Scans `plugins/` directory for `.so`/`.dll` files implementing `IPlugin`. Regist
 
 ### Storage — `src/storage/`
 
-- `Database` — Opens/creates SQLite DB, applies schema migrations.
+- `Database` — Opens/creates SQLite DB, applies versioned schema migrations via `schema_version` table. Each migration runs in a transaction.
 - `ProductRepository` — CRUD for `Product` records.
 - `AlertRepository` — CRUD for `AlertEvent` records.
 
 ### `MainWindow` — `src/gui/MainWindow.cpp`
 
-Product table with columns (Name, Source, Price, Discount, Status, Interval). Toolbar: Add, Edit, Remove, Refresh. Menu bar: File, Settings, Help. Integrates tray icon, poller thread, alert manager.
+Product table with columns (Name, Source, Price, Discount, Status, Last Checked, Interval). Toolbar: Add, Edit, Remove, Check Now, Alert History, Settings. Menu bar: File (Add/Edit/Remove/Restart/Quit), View (Alert History), Tools (Check Now, Settings), Help (Check for Updates, About). Supports multi-select for batch Check Now. Integrates tray icon, poller thread, alert manager, and update checker.
 
 ### `ProductDialog` — `src/gui/ProductDialog.cpp`
 
@@ -177,7 +183,7 @@ Modal dialog for adding/editing products. Source selector (Steam/Udemy/Amazon/Ge
 
 ### `SettingsDialog` — `src/gui/SettingsDialog.cpp`
 
-Language selection, notification preferences. Saves to `QSettings`.
+Groups: Startup (auto-start), Updates (check on startup), Udemy API, Amazon API, Polling, Plugin Directory, Language. Saves to `QSettings`. Language change triggers app restart via `RESTART_EXIT_CODE`. Reports `isRestartNeeded()` to `MainWindow`.
 
 ### `AlertHistoryDialog` — `src/gui/AlertHistoryDialog.cpp`
 
@@ -185,11 +191,19 @@ Table of past `AlertEvent` records with dismiss/clear actions.
 
 ### `TrayIcon` — `src/gui/TrayIcon.cpp`
 
-System tray icon with context menu (Show, Check Now, Quit). Shows balloon notifications on alerts. Swaps icon between normal/alert states.
+System tray icon with context menu (Show, Mute Notifications, Quit). Shows balloon notifications on alerts. Swaps icon between normal/alert states.
+
+### `UpdateChecker` — `src/utils/UpdateChecker.cpp`
+
+Checks GitHub Releases API (`Abdulkhalek-1/PriceBell`) for newer versions. Compares semantic versions. Signals: `updateAvailable(version, url)`, `noUpdateAvailable()`, `checkFailed(errorMsg)`. Used by `MainWindow` for both startup auto-check and manual "Check for Updates".
+
+### `AutoStartManager` — `src/utils/AutoStartManager.cpp`
+
+Platform-specific auto-start management. Linux: `.desktop` file in `~/.config/autostart/`. macOS: plist in `~/Library/LaunchAgents/`. Windows: registry entry in `HKCU\...\Run`.
 
 ### `HttpClient` — `src/utils/HttpClient.cpp`
 
-Async HTTP GET/POST via `QNetworkAccessManager`. Used by all handlers.
+Async HTTP GET via `QNetworkAccessManager`. Used by handlers and `UpdateChecker`.
 
 ### `Logger` — `src/utils/Logger.cpp`
 
@@ -204,17 +218,23 @@ Async HTTP GET/POST via `QNetworkAccessManager`. Used by all handlers.
 | Qt GUI (product CRUD, table, dialogs) | **Implemented** |
 | Filter logic (`PriceChecker::isMatch`) | **Implemented** |
 | SQLite persistence (products, alerts) | **Implemented** |
+| Database migrations (`schema_version`) | **Implemented** |
 | Price handlers (Steam, Udemy, Amazon, Generic) | **Implemented** |
 | Background polling (`PricePoller`) | **Implemented** |
+| Check Now (on-demand, multi-select) | **Implemented** |
 | Alert engine (`AlertManager`) | **Implemented** |
 | System tray + notifications | **Implemented** |
-| Settings dialog | **Implemented** |
+| Settings dialog (startup, updates, API, lang) | **Implemented** |
 | Alert history dialog | **Implemented** |
 | Plugin system | **Implemented** |
-| i18n (EN, AR, FR) | **Implemented** |
-| Dark theme | **Implemented** |
+| Auto-update checker (GitHub Releases API) | **Implemented** |
+| App restart system (exit-code loop) | **Implemented** |
+| Auto-start (Linux, macOS, Windows) | **Implemented** |
+| i18n (EN, AR, FR) — 118 strings | **Implemented** |
+| Dark theme (Catppuccin Mocha) | **Implemented** |
 | RTL layout support | **Implemented** |
 | Tests (price checker, repository) | **Implemented** |
+| CI/CD (GitHub Actions: Linux AppImage, Windows) | **Implemented** |
 
 ---
 
@@ -227,7 +247,7 @@ make
 ./PriceBell
 ```
 
-Requires: `cmake 3.16+`, `g++` (C++17), Qt5 modules: `Widgets`, `Sql`, `Network`, `Svg`, `LinguistTools`.
+Requires: `cmake 3.16+`, `g++` (C++17), Qt5 modules: `Widgets`, `Sql`, `Network`, `Svg`, `LinguistTools`. CMake defines `APP_VERSION` from `project(PriceBell VERSION x.y.z)` and passes it to the compiler.
 
 ---
 

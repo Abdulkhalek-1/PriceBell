@@ -6,6 +6,7 @@
 #include "storage/ProductRepository.hpp"
 #include "storage/Database.hpp"
 #include "utils/Logger.hpp"
+#include "utils/UpdateChecker.hpp"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -20,6 +21,9 @@
 #include <QCloseEvent>
 #include <QFile>
 #include <QSettings>
+#include <QDesktopServices>
+#include <QUrl>
+#include <QSet>
 #include <chrono>
 
 MainWindow::MainWindow(QWidget* parent)
@@ -45,6 +49,7 @@ MainWindow::MainWindow(QWidget* parent)
     setupTray();
     setupPoller();
     loadProducts();
+    setupUpdateChecker();
 }
 
 MainWindow::~MainWindow() {
@@ -106,11 +111,12 @@ void MainWindow::applyDarkTheme() {
             QGroupBox {
                 border: 1px solid #313244;
                 border-radius: 6px;
-                margin-top: 12px;
+                margin-top: 16px;
+                padding: 20px 8px 8px 8px;
                 color: #cba6f7;
                 font-weight: bold;
             }
-            QGroupBox::title { subcontrol-origin: margin; left: 10px; }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 2px 6px; }
             QMenuBar {
                 background-color: #181825;
                 color: #cdd6f4;
@@ -138,15 +144,17 @@ void MainWindow::setupUi() {
 
     // ── Toolbar ───────────────────────────────────────────────────────────────
     QHBoxLayout* toolbar = new QHBoxLayout();
-    QPushButton* addBtn     = new QPushButton(tr("+ Add Product"),   this);
-    QPushButton* editBtn    = new QPushButton(tr("✎ Edit"),           this);
-    QPushButton* removeBtn  = new QPushButton(tr("✕ Remove"),         this);
-    QPushButton* alertsBtn  = new QPushButton(tr("🔔 Alert History"), this);
-    QPushButton* settingsBtn = new QPushButton(tr("⚙ Settings"),      this);
+    QPushButton* addBtn      = new QPushButton(tr("+ Add Product"),   this);
+    QPushButton* editBtn     = new QPushButton(tr("✎ Edit"),           this);
+    QPushButton* removeBtn   = new QPushButton(tr("✕ Remove"),         this);
+    QPushButton* checkNowBtn = new QPushButton(tr("🔄 Check Now"),     this);
+    QPushButton* alertsBtn   = new QPushButton(tr("🔔 Alert History"), this);
+    QPushButton* settingsBtn = new QPushButton(tr("⚙ Settings"),       this);
 
     toolbar->addWidget(addBtn);
     toolbar->addWidget(editBtn);
     toolbar->addWidget(removeBtn);
+    toolbar->addWidget(checkNowBtn);
     toolbar->addStretch();
     toolbar->addWidget(alertsBtn);
     toolbar->addWidget(settingsBtn);
@@ -155,6 +163,7 @@ void MainWindow::setupUi() {
     connect(addBtn,      &QPushButton::clicked, this, &MainWindow::addProduct);
     connect(editBtn,     &QPushButton::clicked, this, &MainWindow::editProduct);
     connect(removeBtn,   &QPushButton::clicked, this, &MainWindow::removeProduct);
+    connect(checkNowBtn, &QPushButton::clicked, this, &MainWindow::checkNow);
     connect(alertsBtn,   &QPushButton::clicked, this, &MainWindow::showAlertHistory);
     connect(settingsBtn, &QPushButton::clicked, this, &MainWindow::showSettings);
 
@@ -168,6 +177,7 @@ void MainWindow::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->setAlternatingRowColors(true);
     layout->addWidget(m_table);
 }
@@ -180,13 +190,23 @@ void MainWindow::setupMenu() {
     fileMenu->addAction(tr("Edit Product"),   this, &MainWindow::editProduct);
     fileMenu->addAction(tr("Remove Product"), this, &MainWindow::removeProduct);
     fileMenu->addSeparator();
+    fileMenu->addAction(tr("Restart"), this, &MainWindow::restartApp);
     fileMenu->addAction(tr("Quit"), qApp, &QApplication::quit);
 
     QMenu* viewMenu = mb->addMenu(tr("View"));
     viewMenu->addAction(tr("Alert History"), this, &MainWindow::showAlertHistory);
 
     QMenu* toolsMenu = mb->addMenu(tr("Tools"));
+    toolsMenu->addAction(tr("Check Now"), this, &MainWindow::checkNow);
     toolsMenu->addAction(tr("Settings"), this, &MainWindow::showSettings);
+
+    QMenu* helpMenu = mb->addMenu(tr("Help"));
+    helpMenu->addAction(tr("Check for Updates"), this, &MainWindow::checkForUpdates);
+    helpMenu->addSeparator();
+    helpMenu->addAction(tr("About"), this, [this]() {
+        QMessageBox::about(this, tr("About PriceBell"),
+            tr("PriceBell %1\nA price tracking application.").arg(APP_VERSION));
+    });
 }
 
 void MainWindow::setupTray() {
@@ -206,8 +226,25 @@ void MainWindow::setupPoller() {
     connect(m_pollerThread, &QThread::started, m_poller, &PricePoller::start);
     connect(m_poller, &PricePoller::priceUpdated,       m_alertManager, &AlertManager::onPriceUpdated);
     connect(m_poller, &PricePoller::productPriceChanged, this,           &MainWindow::onProductPriceChanged);
+    connect(m_poller, &PricePoller::checkNowFinished,    this,           &MainWindow::onCheckNowFinished);
 
     m_pollerThread->start();
+}
+
+void MainWindow::setupUpdateChecker() {
+    m_updateChecker = new UpdateChecker(this);
+
+    connect(m_updateChecker, &UpdateChecker::updateAvailable,
+            this, &MainWindow::onUpdateAvailable);
+    connect(m_updateChecker, &UpdateChecker::noUpdateAvailable,
+            this, &MainWindow::onNoUpdateAvailable);
+    connect(m_updateChecker, &UpdateChecker::checkFailed,
+            this, &MainWindow::onUpdateCheckFailed);
+
+    QSettings s("PriceBell", "PriceBell");
+    if (s.value("updates/check_on_startup", true).toBool()) {
+        m_updateChecker->checkForUpdates();
+    }
 }
 
 void MainWindow::loadProducts() {
@@ -328,8 +365,107 @@ void MainWindow::showSettings() {
         QString dir = s.value("plugins/directory").toString();
         m_pluginManager->loadPlugins(dir);
         m_pluginManager->loadJsonSources();
+
+        if (dlg.isRestartNeeded()) {
+            qApp->exit(RESTART_EXIT_CODE);
+        }
     }
 }
+
+void MainWindow::restartApp() {
+    qApp->exit(RESTART_EXIT_CODE);
+}
+
+// ── Check Now ────────────────────────────────────────────────────────────────
+
+void MainWindow::checkNow() {
+    QSet<int> selectedRows;
+    for (auto* item : m_table->selectedItems()) {
+        selectedRows.insert(item->row());
+    }
+
+    // If nothing selected, check all products
+    if (selectedRows.isEmpty()) {
+        for (int row = 0; row < m_table->rowCount(); ++row) {
+            selectedRows.insert(row);
+        }
+    }
+
+    for (int row : selectedRows) {
+        int productId = m_table->item(row, 0)->data(Qt::UserRole).toInt();
+
+        // Set loading state
+        m_table->item(row, 4)->setText(tr("Checking..."));
+        m_table->item(row, 4)->setForeground(QColor("#f9e2af"));
+
+        QMetaObject::invokeMethod(m_poller, "checkNow",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(int, productId));
+    }
+}
+
+void MainWindow::onCheckNowFinished(int productId, bool success, float, float) {
+    for (int row = 0; row < m_table->rowCount(); ++row) {
+        if (m_table->item(row, 0)->data(Qt::UserRole).toInt() == productId) {
+            if (!success) {
+                m_table->item(row, 4)->setText(tr("Error"));
+                m_table->item(row, 4)->setForeground(QColor("#f38ba8"));
+            } else {
+                auto it = std::find_if(m_products.begin(), m_products.end(),
+                    [productId](const Product& p) { return p.id == productId; });
+                if (it != m_products.end()) {
+                    m_table->item(row, 4)->setText(it->isActive ? tr("Watching") : tr("Paused"));
+                    m_table->item(row, 4)->setForeground(QColor("#cdd6f4"));
+                }
+            }
+            break;
+        }
+    }
+}
+
+// ── Update checker ───────────────────────────────────────────────────────────
+
+void MainWindow::checkForUpdates() {
+    m_manualUpdateCheck = true;
+    m_updateChecker->checkForUpdates();
+}
+
+void MainWindow::onUpdateAvailable(const QString& version, const QString& url) {
+    if (m_manualUpdateCheck) {
+        m_manualUpdateCheck = false;
+        auto reply = QMessageBox::information(this, tr("Update Available"),
+            tr("A new version of PriceBell (%1) is available.\n\n"
+               "Would you like to open the release page?").arg(version),
+            QMessageBox::Yes | QMessageBox::No);
+        if (reply == QMessageBox::Yes) {
+            QDesktopServices::openUrl(QUrl(url));
+        }
+    } else {
+        // Silent auto-check: only tray notification
+        m_trayIcon->showMessage(
+            tr("Update Available"),
+            tr("PriceBell %1 is available.").arg(version),
+            QSystemTrayIcon::Information, 8000);
+    }
+}
+
+void MainWindow::onNoUpdateAvailable() {
+    if (m_manualUpdateCheck) {
+        m_manualUpdateCheck = false;
+        QMessageBox::information(this, tr("Updates"),
+            tr("You are running the latest version of PriceBell."));
+    }
+}
+
+void MainWindow::onUpdateCheckFailed(const QString& errorMsg) {
+    if (m_manualUpdateCheck) {
+        m_manualUpdateCheck = false;
+        QMessageBox::warning(this, tr("Update Check Failed"),
+            tr("Could not check for updates: %1").arg(errorMsg));
+    }
+}
+
+// ── Events ───────────────────────────────────────────────────────────────────
 
 void MainWindow::onAlertTriggered(AlertEvent event) {
     m_trayIcon->showAlert(event);

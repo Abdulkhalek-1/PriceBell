@@ -3,8 +3,11 @@
 
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QVariant>
 #include <QStandardPaths>
 #include <QDir>
+#include <QVector>
+#include <functional>
 
 bool Database::open(const QString& path) {
     QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", kConnectionName);
@@ -86,7 +89,14 @@ bool Database::applySchema() {
             triggered_at        INTEGER NOT NULL,
             status              INTEGER NOT NULL DEFAULT 0
         );
-        )"
+        )",
+        // Schema version tracking table
+        R"(
+        CREATE TABLE IF NOT EXISTS schema_version (
+            version INTEGER NOT NULL DEFAULT 0
+        );
+        )",
+        "INSERT OR IGNORE INTO schema_version (rowid, version) VALUES (1, 0);"
     };
 
     for (const QString& stmt : statements) {
@@ -106,6 +116,59 @@ bool Database::applySchema() {
         q.exec(s); // best-effort
     }
 
+    if (!applyMigrations()) {
+        return false;
+    }
+
     Logger::info("Database schema applied.");
+    return true;
+}
+
+int Database::getSchemaVersion() {
+    QSqlQuery q(connection());
+    if (q.exec("SELECT version FROM schema_version LIMIT 1") && q.next()) {
+        return q.value(0).toInt();
+    }
+    return 0;
+}
+
+bool Database::applyMigrations() {
+    // Each migration upgrades from version N to N+1.
+    // Add new migrations to the end of this vector.
+    using MigrationFn = std::function<bool(QSqlQuery&)>;
+    const QVector<MigrationFn> migrations = {
+        // Migration 0→1: baseline schema (already created above, no-op)
+        [](QSqlQuery&) -> bool { return true; },
+    };
+
+    int currentVersion = getSchemaVersion();
+    QSqlDatabase db = connection();
+
+    for (int i = currentVersion; i < migrations.size(); ++i) {
+        db.transaction();
+        QSqlQuery q(db);
+
+        if (!migrations[i](q)) {
+            db.rollback();
+            Logger::error("Migration " + std::to_string(i) + " → " +
+                          std::to_string(i + 1) + " failed");
+            return false;
+        }
+
+        // Bump version
+        q.prepare("UPDATE schema_version SET version = ?");
+        q.addBindValue(i + 1);
+        if (!q.exec()) {
+            db.rollback();
+            Logger::error("Failed to update schema version: " +
+                          q.lastError().text().toStdString());
+            return false;
+        }
+
+        db.commit();
+        Logger::info("Migration " + std::to_string(i) + " → " +
+                     std::to_string(i + 1) + " applied");
+    }
+
     return true;
 }

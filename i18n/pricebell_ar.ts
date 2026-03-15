@@ -72,206 +72,296 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="28"/>
-        <location filename="../src/gui/MainWindow.cpp" line="371"/>
+        <location filename="../src/gui/MainWindow.cpp" line="32"/>
+        <location filename="../src/gui/MainWindow.cpp" line="507"/>
         <source>PriceBell</source>
         <translation>PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="141"/>
+        <location filename="../src/gui/MainWindow.cpp" line="147"/>
         <source>+ Add Product</source>
         <translation>+ إضافة منتج</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="142"/>
+        <location filename="../src/gui/MainWindow.cpp" line="148"/>
         <source>✎ Edit</source>
         <translation>✎ تعديل</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="143"/>
+        <location filename="../src/gui/MainWindow.cpp" line="149"/>
         <source>✕ Remove</source>
         <translation>✕ حذف</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="144"/>
+        <location filename="../src/gui/MainWindow.cpp" line="150"/>
+        <source>🔄 Check Now</source>
+        <translation>🔄 تحقق الآن</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="151"/>
         <source>🔔 Alert History</source>
         <translation>🔔 سجل التنبيهات</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="145"/>
+        <location filename="../src/gui/MainWindow.cpp" line="152"/>
         <source>⚙ Settings</source>
         <translation>⚙ الإعدادات</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="165"/>
+        <location filename="../src/gui/MainWindow.cpp" line="174"/>
         <source>Name</source>
         <translation>الاسم</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="165"/>
+        <location filename="../src/gui/MainWindow.cpp" line="174"/>
         <source>Source</source>
         <translation>المصدر</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="165"/>
+        <location filename="../src/gui/MainWindow.cpp" line="174"/>
         <source>Current Price</source>
         <translation>السعر الحالي</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="165"/>
+        <location filename="../src/gui/MainWindow.cpp" line="174"/>
         <source>Discount %</source>
         <translation>الخصم %</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="166"/>
+        <location filename="../src/gui/MainWindow.cpp" line="175"/>
         <source>Status</source>
         <translation>الحالة</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="166"/>
+        <location filename="../src/gui/MainWindow.cpp" line="175"/>
         <source>Last Checked</source>
         <translation>آخر فحص</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="166"/>
+        <location filename="../src/gui/MainWindow.cpp" line="175"/>
         <source>Interval (s)</source>
         <translation>الفاصل الزمني (ث)</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="178"/>
+        <location filename="../src/gui/MainWindow.cpp" line="188"/>
         <source>File</source>
         <translation>ملف</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="179"/>
+        <location filename="../src/gui/MainWindow.cpp" line="189"/>
         <source>Add Product</source>
         <translation>إضافة منتج</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="180"/>
+        <location filename="../src/gui/MainWindow.cpp" line="190"/>
         <source>Edit Product</source>
         <translation>تعديل منتج</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="181"/>
+        <location filename="../src/gui/MainWindow.cpp" line="191"/>
         <source>Remove Product</source>
         <translation>حذف منتج</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="183"/>
+        <location filename="../src/gui/MainWindow.cpp" line="193"/>
+        <source>Restart</source>
+        <translation>إعادة التشغيل</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="194"/>
         <source>Quit</source>
         <translation>خروج</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="185"/>
+        <location filename="../src/gui/MainWindow.cpp" line="196"/>
         <source>View</source>
         <translation>عرض</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="186"/>
+        <location filename="../src/gui/MainWindow.cpp" line="197"/>
         <source>Alert History</source>
         <translation>سجل التنبيهات</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="188"/>
+        <location filename="../src/gui/MainWindow.cpp" line="199"/>
         <source>Tools</source>
         <translation>أدوات</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="189"/>
+        <location filename="../src/gui/MainWindow.cpp" line="200"/>
+        <source>Check Now</source>
+        <translation>تحقق الآن</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="201"/>
         <source>Settings</source>
         <translation>الإعدادات</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="233"/>
+        <location filename="../src/gui/MainWindow.cpp" line="203"/>
+        <source>Help</source>
+        <translation>مساعدة</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="204"/>
+        <source>Check for Updates</source>
+        <translation>التحقق من التحديثات</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="206"/>
+        <source>About</source>
+        <translation>حول</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="207"/>
+        <source>About PriceBell</source>
+        <translation>حول PriceBell</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="208"/>
+        <source>PriceBell %1
+A price tracking application.</source>
+        <translation>PriceBell %1
+تطبيق لتتبع الأسعار.</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="270"/>
         <source>Steam</source>
         <translation>Steam</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="234"/>
+        <location filename="../src/gui/MainWindow.cpp" line="271"/>
         <source>Udemy</source>
         <translation>Udemy</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="235"/>
+        <location filename="../src/gui/MainWindow.cpp" line="272"/>
         <source>Amazon</source>
         <translation>Amazon</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="237"/>
+        <location filename="../src/gui/MainWindow.cpp" line="274"/>
         <source>Generic</source>
         <translation>عام</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="241"/>
+        <location filename="../src/gui/MainWindow.cpp" line="278"/>
         <source>Never</source>
         <translation>أبداً</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="246"/>
-        <location filename="../src/gui/MainWindow.cpp" line="350"/>
+        <location filename="../src/gui/MainWindow.cpp" line="283"/>
+        <location filename="../src/gui/MainWindow.cpp" line="486"/>
         <source>$%1</source>
         <translation>$%1</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="248"/>
+        <location filename="../src/gui/MainWindow.cpp" line="285"/>
+        <location filename="../src/gui/MainWindow.cpp" line="417"/>
         <source>Watching</source>
         <translation>مراقبة</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="248"/>
+        <location filename="../src/gui/MainWindow.cpp" line="285"/>
+        <location filename="../src/gui/MainWindow.cpp" line="417"/>
         <source>Paused</source>
         <translation>متوقف</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="263"/>
-        <location filename="../src/gui/MainWindow.cpp" line="288"/>
+        <location filename="../src/gui/MainWindow.cpp" line="300"/>
+        <location filename="../src/gui/MainWindow.cpp" line="325"/>
+        <location filename="../src/gui/MainWindow.cpp" line="411"/>
         <source>Error</source>
         <translation>خطأ</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="263"/>
+        <location filename="../src/gui/MainWindow.cpp" line="300"/>
         <source>Failed to save product to database.</source>
         <translation>فشل حفظ المنتج في قاعدة البيانات.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="274"/>
-        <location filename="../src/gui/MainWindow.cpp" line="299"/>
+        <location filename="../src/gui/MainWindow.cpp" line="311"/>
+        <location filename="../src/gui/MainWindow.cpp" line="336"/>
         <source>No Selection</source>
         <translation>لا يوجد تحديد</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="274"/>
+        <location filename="../src/gui/MainWindow.cpp" line="311"/>
         <source>Please select a product to edit.</source>
         <translation>يرجى تحديد منتج للتعديل.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="288"/>
+        <location filename="../src/gui/MainWindow.cpp" line="325"/>
         <source>Failed to update product.</source>
         <translation>فشل تحديث المنتج.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="299"/>
+        <location filename="../src/gui/MainWindow.cpp" line="336"/>
         <source>Please select a product to remove.</source>
         <translation>يرجى تحديد منتج للحذف.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="305"/>
+        <location filename="../src/gui/MainWindow.cpp" line="342"/>
         <source>Confirm</source>
         <translation>تأكيد</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="306"/>
+        <location filename="../src/gui/MainWindow.cpp" line="343"/>
         <source>Remove &quot;%1&quot;? This will also delete its alert history.</source>
         <translation>حذف &quot;%1&quot;؟ سيتم أيضاً حذف سجل التنبيهات الخاص به.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="340"/>
+        <location filename="../src/gui/MainWindow.cpp" line="398"/>
+        <source>Checking...</source>
+        <translation>جارٍ التحقق...</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="436"/>
+        <location filename="../src/gui/MainWindow.cpp" line="446"/>
+        <source>Update Available</source>
+        <translation>تحديث متاح</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="437"/>
+        <source>A new version of PriceBell (%1) is available.
+
+Would you like to open the release page?</source>
+        <translation>يتوفر إصدار جديد من PriceBell (%1).
+
+هل تريد فتح صفحة الإصدار؟</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="447"/>
+        <source>PriceBell %1 is available.</source>
+        <translation>PriceBell %1 متاح.</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="455"/>
+        <source>Updates</source>
+        <translation>التحديثات</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="456"/>
+        <source>You are running the latest version of PriceBell.</source>
+        <translation>أنت تستخدم أحدث إصدار من PriceBell.</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="463"/>
+        <source>Update Check Failed</source>
+        <translation>فشل التحقق من التحديثات</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="464"/>
+        <source>Could not check for updates: %1</source>
+        <translation>تعذر التحقق من التحديثات: %1</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/MainWindow.cpp" line="476"/>
         <source>🔔 Alert!</source>
         <translation>🔔 تنبيه!</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="372"/>
+        <location filename="../src/gui/MainWindow.cpp" line="508"/>
         <source>PriceBell is still running in the background.</source>
         <translation>PriceBell لا يزال يعمل في الخلفية.</translation>
     </message>
@@ -380,90 +470,118 @@
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="18"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="19"/>
         <source>Settings</source>
         <translation>الإعدادات</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="28"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="30"/>
+        <source>Startup</source>
+        <translation>بدء التشغيل</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/SettingsDialog.cpp" line="32"/>
+        <source>Open on Startup</source>
+        <translation>فتح عند بدء التشغيل</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/SettingsDialog.cpp" line="37"/>
+        <source>Updates</source>
+        <translation>التحديثات</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/SettingsDialog.cpp" line="39"/>
+        <source>Check for updates on startup</source>
+        <translation>التحقق من التحديثات عند بدء التشغيل</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/SettingsDialog.cpp" line="44"/>
         <source>Udemy API Credentials</source>
         <translation>بيانات اعتماد Udemy API</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="33"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="49"/>
         <source>Client ID:</source>
         <translation>معرّف العميل:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="34"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="50"/>
         <source>Client Secret:</source>
         <translation>مفتاح العميل السري:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="38"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="54"/>
         <source>Amazon PA API Credentials</source>
         <translation>بيانات اعتماد Amazon PA API</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="44"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="60"/>
         <source>Access Key:</source>
         <translation>مفتاح الوصول:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="45"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="61"/>
         <source>Secret Key:</source>
         <translation>المفتاح السري:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="46"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="62"/>
         <source>Partner Tag:</source>
         <translation>علامة الشريك:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="50"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="66"/>
         <source>Polling</source>
         <translation>الاستعلام الدوري</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="54"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="70"/>
         <source> sec</source>
         <translation> ثانية</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="56"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="72"/>
         <source>Default Check Interval:</source>
         <translation>فاصل الفحص الافتراضي:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="60"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="76"/>
         <source>Plugin Directory</source>
         <translation>مجلد الإضافات</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="63"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="79"/>
         <source>Browse…</source>
         <translation>تصفح…</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="68"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="84"/>
         <source>Select Plugin Directory</source>
         <translation>اختر مجلد الإضافات</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="73"/>
-        <location filename="../src/gui/SettingsDialog.cpp" line="122"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="89"/>
         <source>Language</source>
         <translation>اللغة</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="80"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="96"/>
         <source>Language:</source>
         <translation>اللغة:</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="123"/>
+        <location filename="../src/gui/SettingsDialog.cpp" line="148"/>
+        <source>Auto-start</source>
+        <translation>التشغيل التلقائي</translation>
+    </message>
+    <message>
+        <location filename="../src/gui/SettingsDialog.cpp" line="149"/>
+        <source>Failed to update auto-start setting.</source>
+        <translation>فشل تحديث إعداد التشغيل التلقائي.</translation>
+    </message>
+    <message>
         <source>Language change will take effect after restarting PriceBell.</source>
-        <translation>سيتم تطبيق تغيير اللغة بعد إعادة تشغيل PriceBell.</translation>
+        <translation type="vanished">سيتم تطبيق تغيير اللغة بعد إعادة تشغيل PriceBell.</translation>
     </message>
 </context>
 <context>
@@ -497,6 +615,19 @@
         <location filename="../src/gui/TrayIcon.cpp" line="45"/>
         <source>%1 — $%2 (%3% off)</source>
         <translation>%1 — $%2 (خصم %3%)</translation>
+    </message>
+</context>
+<context>
+    <name>UpdateChecker</name>
+    <message>
+        <location filename="../src/utils/UpdateChecker.cpp" line="29"/>
+        <source>Invalid response from server.</source>
+        <translation>استجابة غير صالحة من الخادم.</translation>
+    </message>
+    <message>
+        <location filename="../src/utils/UpdateChecker.cpp" line="38"/>
+        <source>No release information found.</source>
+        <translation>لم يتم العثور على معلومات الإصدار.</translation>
     </message>
 </context>
 </TS>

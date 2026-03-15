@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QCheckBox>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QComboBox>
@@ -10,6 +11,7 @@ class SettingsDialog : public QDialog {
     Q_OBJECT
 public:
     explicit SettingsDialog(QWidget* parent = nullptr);
+    bool isRestartNeeded() const { return m_restartNeeded; }
 
 private slots:
     void saveSettings();
@@ -17,6 +19,8 @@ private slots:
 private:
     void setupUi();
     void loadSettings();
+
+    bool m_restartNeeded = false;
 
     // Steam (no credentials needed — public API)
     // Udemy
@@ -33,4 +37,8 @@ private:
     // Language
     QComboBox* m_languageCombo;
     QLabel*    m_languageLabel;
+    // Open on Startup
+    QCheckBox* m_autoStartCheck;
+    // Updates
+    QCheckBox* m_autoUpdateCheck;
 };

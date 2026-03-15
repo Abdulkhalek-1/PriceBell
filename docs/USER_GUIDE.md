@@ -61,9 +61,18 @@ The main window displays all tracked products in a table with the following colu
 | Source | Handler used (Steam, Udemy, Amazon, Generic, or plugin name) |
 | Current Price | Last fetched price |
 | Discount % | Last fetched discount percentage |
-| Status | Active or inactive |
+| Status | Watching, Paused, Checking..., Error, or Alert! |
 | Last Checked | Timestamp of the most recent price fetch |
 | Interval (s) | Polling interval in seconds |
+
+## Check Now
+
+You can manually trigger an immediate price check without waiting for the next polling interval:
+
+1. **Select products** in the table using click, Ctrl+click, or Shift+click for multi-select.
+2. Click the **Check Now** button in the toolbar, or go to **Tools > Check Now**.
+3. If no products are selected, all products are checked.
+4. While checking, the Status column shows **Checking...** in yellow. On completion it returns to **Watching** or shows **Error** if the fetch failed.
 
 ## Alerts and Notifications
 
@@ -115,9 +124,31 @@ Obtain these from the [Udemy API](https://www.udemy.com/developers/) page.
 
 These are required to track Amazon product prices. Sign up through [Amazon Associates](https://affiliate-program.amazon.com/).
 
+### Startup
+
+| Field | Description |
+|-------|-------------|
+| Open on Startup | Launch PriceBell automatically when your system starts |
+
+### Updates
+
+| Field | Description |
+|-------|-------------|
+| Check for updates on startup | Automatically check GitHub for new releases when the app launches |
+
+You can also manually check via **Help > Check for Updates**. If a newer version is available, you will be offered a link to the release page.
+
 ### General
 
 | Field | Description |
 |-------|-------------|
 | Default Check Interval | The default polling interval (in seconds) applied to new products |
 | Plugin Directory | Path to the directory where PriceBell looks for native plugins |
+
+### Language
+
+Select from English, Arabic, or French. Changing the language automatically restarts the application to apply the new locale. Arabic enables right-to-left (RTL) layout.
+
+## Restarting
+
+You can restart PriceBell at any time via **File > Restart**. The app also restarts automatically when you change the language in Settings.

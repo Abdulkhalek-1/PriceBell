@@ -33,13 +33,12 @@ public:
 public slots:
     void onProductAdded(Product product);
     void onProductRemoved(int productId);
+    void checkNow(int productId);
 
 signals:
-    // Emitted after each successful fetch with the updated product and result.
     void priceUpdated(Product product, FetchResult result);
-
-    // Convenience signal for the GUI to refresh a row.
     void productPriceChanged(int productId, float newPrice, float newDiscount);
+    void checkNowFinished(int productId, bool success, float newPrice, float newDiscount);
 
 private slots:
     void pollProduct(int productId);
