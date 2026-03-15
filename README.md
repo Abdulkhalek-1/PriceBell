@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/readme_banner.svg" alt="PriceBell Banner" />
+</p>
+
 # PriceBell
 
 A desktop price tracking application that monitors product prices across Steam, Udemy, Amazon, and custom sources. Get notified when prices drop below your thresholds or discounts reach your targets.
