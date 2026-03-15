@@ -1,5 +1,6 @@
 #include "gui/AlertHistoryDialog.hpp"
 #include "storage/AlertRepository.hpp"
+#include "utils/CurrencyUtils.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -34,10 +35,20 @@ void AlertHistoryDialog::setupUi() {
     m_table->setAlternatingRowColors(true);
     layout->addWidget(m_table);
 
+    // Tooltips for table headers
+    m_table->horizontalHeaderItem(0)->setToolTip(tr("Product that triggered the alert"));
+    m_table->horizontalHeaderItem(1)->setToolTip(tr("Price at the time the alert was triggered"));
+    m_table->horizontalHeaderItem(2)->setToolTip(tr("Discount percentage at trigger time"));
+    m_table->horizontalHeaderItem(3)->setToolTip(tr("Date and time the alert was triggered"));
+    m_table->horizontalHeaderItem(4)->setToolTip(tr("Whether the alert is still active or dismissed"));
+
     QHBoxLayout* btnLayout = new QHBoxLayout();
     QPushButton* dismissBtn = new QPushButton(tr("Dismiss Selected"), this);
+    dismissBtn->setToolTip(tr("Mark the selected alert as dismissed"));
     QPushButton* refreshBtn = new QPushButton(tr("Refresh"), this);
+    refreshBtn->setToolTip(tr("Reload alert history from database"));
     QPushButton* closeBtn   = new QPushButton(tr("Close"), this);
+    closeBtn->setToolTip(tr("Close this dialog"));
 
     btnLayout->addWidget(dismissBtn);
     btnLayout->addStretch();
@@ -74,7 +85,7 @@ void AlertHistoryDialog::populateTable(const std::vector<AlertEvent>& events) {
             .toString("yyyy-MM-dd HH:mm:ss");
 
         m_table->setItem(row, 0, item(QString::fromStdString(e.productName)));
-        m_table->setItem(row, 1, item(tr("$%1").arg(e.priceAtTrigger, 0, 'f', 2)));
+        m_table->setItem(row, 1, item(CurrencyUtils::formatPrice(e.priceAtTrigger, "USD")));
         m_table->setItem(row, 2, item(QString("%1%").arg(static_cast<int>(e.discountAtTrigger))));
         m_table->setItem(row, 3, item(timeStr));
         m_table->setItem(row, 4, item(e.status == AlertStatus::DISMISSED ? tr("Dismissed") : tr("Active")));

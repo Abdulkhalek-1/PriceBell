@@ -5,6 +5,7 @@
 #include <QLocale>
 #include <QLibraryInfo>
 #include <QStandardPaths>
+#include "core/AppController.hpp"
 #include "gui/MainWindow.hpp"
 #include "storage/Database.hpp"
 #include "utils/Logger.hpp"
@@ -58,7 +59,10 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        MainWindow window;
+        AppController controller;
+        controller.initialize();
+
+        MainWindow window(&controller);
         window.show();
 
         exitCode = app.exec();

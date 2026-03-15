@@ -41,4 +41,6 @@ private:
     QCheckBox* m_autoStartCheck;
     // Updates
     QCheckBox* m_autoUpdateCheck;
+    // Notification sound
+    QCheckBox* m_notificationSoundCheck;
 };

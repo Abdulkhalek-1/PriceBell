@@ -1,6 +1,11 @@
 #include "gui/TrayIcon.hpp"
+#include "utils/CurrencyUtils.hpp"
+#include "utils/SettingsProvider.hpp"
+#include "utils/Constants.hpp"
+
 #include <QApplication>
 #include <QIcon>
+#include <QSoundEffect>
 
 TrayIcon::TrayIcon(QWidget* mainWindow, QObject* parent)
     : QSystemTrayIcon(QIcon(":/assets/icons/tray_normal.svg"), parent)
@@ -41,11 +46,26 @@ void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason) {
 void TrayIcon::showAlert(const AlertEvent& event) {
     if (m_muted || !isSystemTrayAvailable()) return;
 
+    // Use CurrencyUtils for price formatting — we don't have the product's currency
+    // in AlertEvent, so fall back to USD formatting
     QString title = tr("PriceBell Alert");
-    QString msg   = tr("%1 — $%2 (%3% off)")
+    QString msg   = tr("%1 — %2 (%3% off)")
         .arg(QString::fromStdString(event.productName))
-        .arg(event.priceAtTrigger, 0, 'f', 2)
+        .arg(CurrencyUtils::formatPrice(event.priceAtTrigger, "USD"))
         .arg(static_cast<int>(event.discountAtTrigger));
 
-    showMessage(title, msg, QSystemTrayIcon::Information, 5000);
+    showMessage(title, msg, QSystemTrayIcon::Information,
+                PriceBell::kTrayAlertTimeoutMs);
+
+    // Play notification sound if enabled
+    if (SettingsProvider::instance().notificationSoundEnabled()) {
+        QSoundEffect* sound = new QSoundEffect(this);
+        sound->setSource(QUrl("qrc:/assets/sounds/alert.wav"));
+        sound->play();
+        connect(sound, &QSoundEffect::playingChanged, this, [sound]() {
+            if (!sound->isPlaying()) {
+                sound->deleteLater();
+            }
+        });
+    }
 }
