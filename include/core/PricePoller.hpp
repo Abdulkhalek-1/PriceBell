@@ -22,7 +22,7 @@ public:
     explicit PricePoller(PluginManager* pluginManager, QObject* parent = nullptr);
 
     // Updates the list of products to poll. Thread-safe.
-    void setProducts(const std::vector<Product>& products);
+    void setProducts(std::vector<Product> products);
 
     // Starts the poller (call from the background QThread).
     void start();
@@ -48,7 +48,8 @@ private:
     void unscheduleProduct(int productId);
 
     PluginManager*         m_pluginManager;
-    QMutex                 m_mutex;
+    QRecursiveMutex        m_mutex;
     QMap<int, Product>     m_products;
     QMap<int, QTimer*>     m_timers;
+    bool                   m_running = false;
 };
