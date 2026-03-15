@@ -79,6 +79,26 @@ docs: update plugin development guide
 - Repository tests use in-memory SQLite (`:memory:`) to avoid filesystem dependencies.
 - Add new test targets in `CMakeLists.txt` following the existing test target structure.
 
+## Database Migrations
+
+If your change adds or modifies SQLite tables, you must add a migration:
+
+1. Open `src/storage/Database.cpp` and find the `applyMigrations()` function.
+2. Append a new lambda to the `migrations` vector. The lambda receives a `QSqlQuery&` and returns `bool`.
+3. Each migration upgrades from version N to N+1. The `schema_version` table tracks the current version.
+4. Migrations run inside a transaction — if your lambda returns `false`, the transaction is rolled back.
+5. Never modify existing migrations — only append new ones.
+
+## Translations (i18n)
+
+All user-facing strings must be wrapped in `tr()`. After adding new strings:
+
+```bash
+lupdate src/ include/ -ts i18n/pricebell_en.ts i18n/pricebell_ar.ts i18n/pricebell_fr.ts
+```
+
+Then provide translations for Arabic and French in the `.ts` files. English translations can be left empty (source text is used as-is).
+
 ## Reporting Issues
 
 Use GitHub Issues to report bugs or request features. Include the following information:

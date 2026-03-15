@@ -62,10 +62,13 @@ cmake --build . --config Release
 
 The CMake configuration enables `AUTOMOC`, `AUTOUIC`, and `AUTORCC` automatically, so Qt meta-object compilation, UI form processing, and resource compilation require no manual steps.
 
-After a successful build, two post-build actions are performed:
+The project version from `project(PriceBell VERSION x.y.z)` is passed to the compiler as `APP_VERSION` via `add_compile_definitions`. This is used by the update checker to compare against GitHub releases.
+
+After a successful build, three post-build actions are performed:
 
 1. A `plugins/` directory is created next to the output binary (for runtime plugin loading).
 2. The `assets/` directory is copied alongside the binary so that themes and resources are available at runtime.
+3. Translation `.qm` files are copied to an `i18n/` directory next to the binary.
 
 ## Running Tests
 

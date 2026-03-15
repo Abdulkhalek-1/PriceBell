@@ -23,7 +23,8 @@
 |  AlertRepository                |
 +----------------------------------+
 |        Utils Layer               |
-|  Logger, HttpClient             |
+|  Logger, HttpClient,            |
+|  UpdateChecker, AutoStartManager|
 +----------------------------------+
 ```
 
@@ -39,7 +40,8 @@ include/
   storage/    Database.hpp, ProductRepository.hpp, AlertRepository.hpp
   gui/        MainWindow.hpp, ProductDialog.hpp, AlertHistoryDialog.hpp,
               SettingsDialog.hpp, TrayIcon.hpp
-  utils/      Logger.hpp, HttpClient.hpp
+  utils/      Logger.hpp, HttpClient.hpp, UpdateChecker.hpp,
+              AutoStartManager.hpp
 
 src/          Mirrors include/ structure with .cpp implementations
 ```
@@ -81,7 +83,7 @@ Extends `IPriceHandler` with plugin-specific functionality:
 
 ## SQLite Schema
 
-The database contains four tables.
+The database contains five tables. Schema changes are managed via versioned migrations (see `schema_version` table).
 
 ### sources
 
@@ -132,6 +134,14 @@ Pre-seeded rows: `steam`, `udemy`, `amazon`.
 | triggered_at | TEXT | ISO 8601 timestamp |
 | status | INTEGER | Maps to AlertStatus enum |
 
+### schema_version
+
+| Column | Type | Notes |
+|--------|------|-------|
+| version | INTEGER | Current schema version (single row) |
+
+Used by `Database::applyMigrations()` to track which migrations have been applied. Each migration increments this value inside a transaction.
+
 ## Plugin System (Dual-Tier)
 
 PriceBell supports three tiers of price handlers.
@@ -175,6 +185,7 @@ Application settings are managed via `QSettings` with the following keys:
 
 | Key | Description |
 |-----|-------------|
+| `language` | User's selected locale (default: `en`) |
 | `udemy/client_id` | Udemy API client ID |
 | `udemy/client_secret` | Udemy API client secret |
 | `amazon/access_key` | Amazon PA API access key |
@@ -182,6 +193,15 @@ Application settings are managed via `QSettings` with the following keys:
 | `amazon/partner_tag` | Amazon Associates partner tag |
 | `polling/default_interval` | Default polling interval in seconds |
 | `plugins/directory` | Path to the plugins directory |
+| `updates/check_on_startup` | Auto-check GitHub for updates on startup (default: `true`) |
+
+## App Restart
+
+`main()` wraps the `QApplication` event loop in a `do...while(exitCode == RESTART_EXIT_CODE)` loop. When SettingsDialog detects a language change, it sets a restart flag. After the dialog closes, MainWindow calls `qApp->exit(RESTART_EXIT_CODE)`, which causes the loop to destroy the current `QApplication` and create a fresh one with the new locale loaded. The constant `RESTART_EXIT_CODE` (1000) is defined in `DataStructs.hpp`.
+
+## Update Checker
+
+`UpdateChecker` (in `utils/`) queries `https://api.github.com/repos/Abdulkhalek-1/PriceBell/releases/latest` and compares the remote `tag_name` (semantic version) against the compile-time `APP_VERSION` macro. On startup (if enabled in settings) it checks silently and shows a tray notification if an update is available. Manual checks via Help > Check for Updates show a dialog for all outcomes.
 
 ## Theme
 
