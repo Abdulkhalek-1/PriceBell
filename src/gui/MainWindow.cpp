@@ -302,7 +302,7 @@ void MainWindow::showAlertHistory() {
 }
 
 void MainWindow::showSettings() {
-    SettingsDialog dlg(this);
+    SettingsDialog dlg(this, m_controller->pluginManager());
     if (dlg.exec() == QDialog::Accepted) {
         // Reload plugins in case directory changed
         QString dir = SettingsProvider::instance().pluginDirectory();

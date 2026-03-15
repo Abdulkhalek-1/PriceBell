@@ -6,11 +6,15 @@
 #include <QSpinBox>
 #include <QComboBox>
 #include <QLabel>
+#include <QVBoxLayout>
+
+class PluginManager;
 
 class SettingsDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit SettingsDialog(QWidget* parent = nullptr);
+    explicit SettingsDialog(QWidget* parent = nullptr,
+                            PluginManager* pluginManager = nullptr);
     bool isRestartNeeded() const { return m_restartNeeded; }
 
 private slots:
@@ -18,7 +22,10 @@ private slots:
 
 private:
     void setupUi();
+    void setupPluginsSection(QVBoxLayout* mainLayout);
     void loadSettings();
+
+    PluginManager* m_pluginManager = nullptr;
 
     bool m_restartNeeded = false;
 

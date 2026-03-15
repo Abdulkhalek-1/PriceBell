@@ -1,5 +1,6 @@
 #include "core/PluginManager.hpp"
 #include "core/IPlugin.hpp"
+#include "core/IPlugin2.hpp"
 #include "handlers/SteamHandler.hpp"
 #include "handlers/UdemyHandler.hpp"
 #include "handlers/AmazonHandler.hpp"
@@ -131,6 +132,16 @@ void PluginManager::loadPlugins(const QString& pluginDir) {
         };
 
         Logger::info("Loaded plugin: " + id.toStdString() + " from " + path.toStdString());
+
+        // Detect IPlugin2 extended interface
+        IPlugin2* plugin2 = qobject_cast<IPlugin2*>(obj);
+        if (plugin2) {
+            Logger::info("Plugin supports IPlugin2 interface: " + id.toStdString());
+            QString style = plugin2->styleSheet();
+            if (!style.isEmpty()) {
+                Logger::info("Plugin provides custom stylesheet: " + id.toStdString());
+            }
+        }
     }
 }
 
@@ -190,6 +201,17 @@ FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::
     }
 
     return entry.handler->fetchProduct(url);
+}
+
+QList<IPlugin2*> PluginManager::plugin2Interfaces() const {
+    QList<IPlugin2*> result;
+    for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
+        IPlugin2* p2 = dynamic_cast<IPlugin2*>(it.value().handler.get());
+        if (p2) {
+            result.append(p2);
+        }
+    }
+    return result;
 }
 
 std::vector<SourceConfig> PluginManager::availableSources() const {
