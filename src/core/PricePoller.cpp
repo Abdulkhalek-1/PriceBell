@@ -83,6 +83,50 @@ void PricePoller::onProductRemoved(int productId) {
     unscheduleProduct(productId);
 }
 
+void PricePoller::checkNow(int productId) {
+    Product product;
+    {
+        QMutexLocker lock(&m_mutex);
+        if (!m_products.contains(productId)) {
+            emit checkNowFinished(productId, false, 0.0f, 0.0f);
+            return;
+        }
+        product = m_products[productId];
+    }
+
+    std::string sourceId = product.sourcePluginId.empty()
+        ? [&]() -> std::string {
+            switch (product.source) {
+                case SourceType::STEAM:   return "steam";
+                case SourceType::UDEMY:   return "udemy";
+                case SourceType::AMAZON:  return "amazon";
+                default:                  return "generic";
+            }
+        }()
+        : product.sourcePluginId;
+
+    IPriceHandler* handler = m_pluginManager->handlerFor(sourceId);
+    if (!handler) {
+        emit checkNowFinished(productId, false, 0.0f, 0.0f);
+        return;
+    }
+
+    FetchResult result = handler->fetchProduct(product.url);
+
+    if (result.success) {
+        {
+            QMutexLocker lock(&m_mutex);
+            if (m_products.contains(productId)) {
+                m_products[productId].currentPrice = result.price;
+                m_products[productId].discount     = result.discount;
+            }
+        }
+        emit productPriceChanged(productId, result.price, result.discount);
+        emit priceUpdated(product, result);
+    }
+    emit checkNowFinished(productId, result.success, result.price, result.discount);
+}
+
 void PricePoller::pollProduct(int productId) {
     Product product;
     {
