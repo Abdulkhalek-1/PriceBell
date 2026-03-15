@@ -67,6 +67,7 @@ struct Product {
     std::string                           url;
     SourceType                            source         = SourceType::STEAM;
     std::string                           sourcePluginId; // non-empty when source == PLUGIN
+    std::string                           currency = "USD";  // ISO 4217 currency code
     float                                 currentPrice   = 0.0f;
     float                                 discount       = 0.0f;  // percentage 0-100
     bool                                  isActive       = true;

@@ -73,7 +73,7 @@ set(TEST_COMMON_SOURCES
     src/utils/Logger.cpp
 )
 
-file(GLOB TEST_SOURCES "tests/test_price_checker.cpp" "tests/test_repository.cpp")
+file(GLOB TEST_SOURCES "tests/test_price_checker.cpp" "tests/test_repository.cpp" "tests/test_currency_utils.cpp")
 foreach(TEST_SRC ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SRC} ${TEST_COMMON_SOURCES})

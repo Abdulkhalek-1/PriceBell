@@ -4,28 +4,12 @@
 
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QSqlDatabase>
 #include <QVariant>
+#include <QMap>
 #include <chrono>
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-SourceType ProductRepository::sourceIdToType(const QString& id) {
-    if (id == "steam")  return SourceType::STEAM;
-    if (id == "udemy")  return SourceType::UDEMY;
-    if (id == "amazon") return SourceType::AMAZON;
-    if (id == "plugin") return SourceType::PLUGIN;
-    return SourceType::GENERIC;
-}
-
-QString ProductRepository::sourceTypeToId(SourceType type) {
-    switch (type) {
-        case SourceType::STEAM:   return "steam";
-        case SourceType::UDEMY:   return "udemy";
-        case SourceType::AMAZON:  return "amazon";
-        case SourceType::PLUGIN:  return "plugin";
-        default:                  return "generic";
-    }
-}
 
 std::vector<PriceCondition> ProductRepository::loadConditions(int productId) {
     std::vector<PriceCondition> conditions;
@@ -71,15 +55,18 @@ bool ProductRepository::saveConditions(int productId, const std::vector<PriceCon
 // ── Public API ────────────────────────────────────────────────────────────────
 
 bool ProductRepository::save(Product& product) {
-    QSqlQuery q(Database::connection());
+    QSqlDatabase db = Database::connection();
+    db.transaction();
+
+    QSqlQuery q(db);
     q.prepare(
-        "INSERT INTO products(name, url, source_id, current_price, discount, is_active, check_interval, last_checked) "
-        "VALUES(:name, :url, :src, :price, :disc, :active, :interval, :checked)"
+        "INSERT INTO products(name, url, source_id, current_price, discount, is_active, check_interval, last_checked, currency) "
+        "VALUES(:name, :url, :src, :price, :disc, :active, :interval, :checked, :currency)"
     );
     q.bindValue(":name",     QString::fromStdString(product.name));
     q.bindValue(":url",      QString::fromStdString(product.url));
     q.bindValue(":src",      product.sourcePluginId.empty()
-                               ? sourceTypeToId(product.source)
+                               ? QString::fromStdString(sourceTypeToId(product.source))
                                : QString::fromStdString(product.sourcePluginId));
     q.bindValue(":price",    product.currentPrice);
     q.bindValue(":disc",     product.discount);
@@ -87,18 +74,29 @@ bool ProductRepository::save(Product& product) {
     q.bindValue(":interval", static_cast<int>(product.checkInterval.count()));
     q.bindValue(":checked",  static_cast<long long>(
         std::chrono::system_clock::to_time_t(product.lastChecked)));
+    q.bindValue(":currency", QString::fromStdString(product.currency));
 
     if (!q.exec()) {
         Logger::error("save product failed: " + q.lastError().text().toStdString());
+        db.rollback();
         return false;
     }
     product.id = q.lastInsertId().toInt();
-    return saveConditions(product.id, product.filters);
+
+    if (!saveConditions(product.id, product.filters)) {
+        db.rollback();
+        return false;
+    }
+
+    db.commit();
+    return true;
 }
 
 std::vector<Product> ProductRepository::findAll() {
     std::vector<Product> products;
-    QSqlQuery q("SELECT id, name, url, source_id, current_price, discount, is_active, check_interval, last_checked "
+
+    // Query 1: Load all products
+    QSqlQuery q("SELECT id, name, url, source_id, current_price, discount, is_active, check_interval, last_checked, currency "
                 "FROM products ORDER BY id ASC",
                 Database::connection());
     if (!q.exec()) {
@@ -110,24 +108,51 @@ std::vector<Product> ProductRepository::findAll() {
         p.id            = q.value(0).toInt();
         p.name          = q.value(1).toString().toStdString();
         p.url           = q.value(2).toString().toStdString();
-        QString srcId   = q.value(3).toString();
+        std::string srcId = q.value(3).toString().toStdString();
         p.source        = sourceIdToType(srcId);
         if (p.source == SourceType::PLUGIN)
-            p.sourcePluginId = srcId.toStdString();
+            p.sourcePluginId = srcId;
         p.currentPrice  = q.value(4).toFloat();
         p.discount      = q.value(5).toFloat();
         p.isActive      = q.value(6).toInt() != 0;
         p.checkInterval = std::chrono::seconds(q.value(7).toInt());
         p.lastChecked   = std::chrono::system_clock::from_time_t(q.value(8).toLongLong());
-        p.filters       = loadConditions(p.id);
-        products.push_back(p);
+        p.currency      = q.value(9).toString().toStdString();
+        if (p.currency.empty()) p.currency = "USD";
+        products.push_back(std::move(p));
     }
+
+    // Query 2: Load ALL conditions in one query (N+1 fix)
+    QSqlQuery cq("SELECT id, product_id, condition_type, value FROM price_conditions ORDER BY product_id",
+                 Database::connection());
+    if (!cq.exec()) {
+        Logger::error("findAll conditions failed: " + cq.lastError().text().toStdString());
+        return products; // return products without conditions rather than failing entirely
+    }
+
+    QMap<int, std::vector<PriceCondition>> conditionsMap;
+    while (cq.next()) {
+        PriceCondition pc;
+        pc.id    = cq.value(0).toInt();
+        pc.type  = static_cast<ConditionType>(cq.value(2).toInt());
+        pc.value = cq.value(3).toFloat();
+        int pid  = cq.value(1).toInt();
+        conditionsMap[pid].push_back(pc);
+    }
+
+    // Assign conditions to products
+    for (auto& p : products) {
+        if (conditionsMap.contains(p.id)) {
+            p.filters = std::move(conditionsMap[p.id]);
+        }
+    }
+
     return products;
 }
 
 std::optional<Product> ProductRepository::findById(int id) {
     QSqlQuery q(Database::connection());
-    q.prepare("SELECT id, name, url, source_id, current_price, discount, is_active, check_interval, last_checked "
+    q.prepare("SELECT id, name, url, source_id, current_price, discount, is_active, check_interval, last_checked, currency "
               "FROM products WHERE id = :id");
     q.bindValue(":id", id);
     if (!q.exec() || !q.next()) return std::nullopt;
@@ -136,30 +161,35 @@ std::optional<Product> ProductRepository::findById(int id) {
     p.id            = q.value(0).toInt();
     p.name          = q.value(1).toString().toStdString();
     p.url           = q.value(2).toString().toStdString();
-    QString srcId   = q.value(3).toString();
+    std::string srcId = q.value(3).toString().toStdString();
     p.source        = sourceIdToType(srcId);
     if (p.source == SourceType::PLUGIN)
-        p.sourcePluginId = srcId.toStdString();
+        p.sourcePluginId = srcId;
     p.currentPrice  = q.value(4).toFloat();
     p.discount      = q.value(5).toFloat();
     p.isActive      = q.value(6).toInt() != 0;
     p.checkInterval = std::chrono::seconds(q.value(7).toInt());
     p.lastChecked   = std::chrono::system_clock::from_time_t(q.value(8).toLongLong());
+    p.currency      = q.value(9).toString().toStdString();
+    if (p.currency.empty()) p.currency = "USD";
     p.filters       = loadConditions(p.id);
     return p;
 }
 
 bool ProductRepository::update(const Product& product) {
-    QSqlQuery q(Database::connection());
+    QSqlDatabase db = Database::connection();
+    db.transaction();
+
+    QSqlQuery q(db);
     q.prepare(
         "UPDATE products SET name=:name, url=:url, source_id=:src, current_price=:price, "
-        "discount=:disc, is_active=:active, check_interval=:interval, last_checked=:checked "
-        "WHERE id=:id"
+        "discount=:disc, is_active=:active, check_interval=:interval, last_checked=:checked, "
+        "currency=:currency WHERE id=:id"
     );
     q.bindValue(":name",     QString::fromStdString(product.name));
     q.bindValue(":url",      QString::fromStdString(product.url));
     q.bindValue(":src",      product.sourcePluginId.empty()
-                               ? sourceTypeToId(product.source)
+                               ? QString::fromStdString(sourceTypeToId(product.source))
                                : QString::fromStdString(product.sourcePluginId));
     q.bindValue(":price",    product.currentPrice);
     q.bindValue(":disc",     product.discount);
@@ -167,22 +197,48 @@ bool ProductRepository::update(const Product& product) {
     q.bindValue(":interval", static_cast<int>(product.checkInterval.count()));
     q.bindValue(":checked",  static_cast<long long>(
         std::chrono::system_clock::to_time_t(product.lastChecked)));
+    q.bindValue(":currency", QString::fromStdString(product.currency));
     q.bindValue(":id",       product.id);
 
     if (!q.exec()) {
         Logger::error("update product failed: " + q.lastError().text().toStdString());
+        db.rollback();
         return false;
     }
-    return saveConditions(product.id, product.filters);
+
+    if (!saveConditions(product.id, product.filters)) {
+        db.rollback();
+        return false;
+    }
+
+    db.commit();
+    return true;
 }
 
 bool ProductRepository::remove(int id) {
-    QSqlQuery q(Database::connection());
+    QSqlDatabase db = Database::connection();
+    db.transaction();
+
+    // Delete conditions first (even though CASCADE would handle it,
+    // explicit delete ensures we control the transaction boundary)
+    QSqlQuery delCond(db);
+    delCond.prepare("DELETE FROM price_conditions WHERE product_id = :id");
+    delCond.bindValue(":id", id);
+    if (!delCond.exec()) {
+        Logger::error("remove conditions failed: " + delCond.lastError().text().toStdString());
+        db.rollback();
+        return false;
+    }
+
+    QSqlQuery q(db);
     q.prepare("DELETE FROM products WHERE id = :id");
     q.bindValue(":id", id);
     if (!q.exec()) {
         Logger::error("remove product failed: " + q.lastError().text().toStdString());
+        db.rollback();
         return false;
     }
+
+    db.commit();
     return true;
 }

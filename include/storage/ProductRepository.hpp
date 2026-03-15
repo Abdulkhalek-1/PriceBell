@@ -25,6 +25,4 @@ public:
 private:
     static std::vector<PriceCondition> loadConditions(int productId);
     static bool saveConditions(int productId, const std::vector<PriceCondition>& conditions);
-    static SourceType sourceIdToType(const QString& id);
-    static QString sourceTypeToId(SourceType type);
 };
