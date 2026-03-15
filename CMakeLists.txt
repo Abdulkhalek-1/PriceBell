@@ -81,3 +81,19 @@ foreach(TEST_SRC ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME} Qt5::Sql Qt5::Network)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
+
+# URL validation test — needs handler + HttpClient sources
+set(URL_VALIDATION_SOURCES
+    src/handlers/SteamHandler.cpp
+    src/handlers/UdemyHandler.cpp
+    src/handlers/AmazonHandler.cpp
+    src/handlers/GenericWebHandler.cpp
+    src/utils/HttpClient.cpp
+    src/utils/Logger.cpp
+    src/utils/SettingsProvider.cpp
+    include/utils/HttpClient.hpp
+)
+add_executable(test_url_validation tests/test_url_validation.cpp ${URL_VALIDATION_SOURCES})
+target_include_directories(test_url_validation PRIVATE include)
+target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
+add_test(NAME test_url_validation COMMAND test_url_validation)

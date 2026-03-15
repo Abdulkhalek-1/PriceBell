@@ -3,7 +3,8 @@
 
 #include <QNetworkRequest>
 #include <QNetworkReply>
-#include <QUrl>
+#include <QEventLoop>
+#include <QTimer>
 
 HttpClient::HttpClient(QObject* parent)
     : QObject(parent)
@@ -30,4 +31,79 @@ void HttpClient::get(const QString& url, Callback callback) {
         }
         reply->deleteLater();
     });
+}
+
+SyncResponse HttpClient::getSync(const QUrl& url, int timeoutMs) {
+    SyncResponse response;
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell/2.0");
+    for (auto it = m_headers.begin(); it != m_headers.end(); ++it)
+        request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
+
+    QEventLoop loop;
+    QNetworkReply* reply = m_manager->get(request);
+
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    timer.start(timeoutMs);
+    loop.exec();
+
+    if (!timer.isActive()) {
+        reply->abort();
+        response.error = "Request timed out";
+        reply->deleteLater();
+        return response;
+    }
+    timer.stop();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        response.error = reply->errorString();
+    } else {
+        response.ok = true;
+        response.body = reply->readAll();
+    }
+    reply->deleteLater();
+    return response;
+}
+
+SyncResponse HttpClient::postSync(const QUrl& url, const QByteArray& body,
+                                   const QMap<QString, QString>& headers,
+                                   int timeoutMs) {
+    SyncResponse response;
+    QNetworkRequest request(url);
+    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell/2.0");
+    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
+    for (auto it = m_headers.begin(); it != m_headers.end(); ++it)
+        request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
+    for (auto it = headers.begin(); it != headers.end(); ++it)
+        request.setRawHeader(it.key().toUtf8(), it.value().toUtf8());
+
+    QEventLoop loop;
+    QNetworkReply* reply = m_manager->post(request, body);
+
+    QTimer timer;
+    timer.setSingleShot(true);
+    QObject::connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    timer.start(timeoutMs);
+    loop.exec();
+
+    if (!timer.isActive()) {
+        reply->abort();
+        response.error = "Request timed out";
+        reply->deleteLater();
+        return response;
+    }
+    timer.stop();
+
+    if (reply->error() != QNetworkReply::NoError) {
+        response.error = reply->errorString();
+    } else {
+        response.ok = true;
+        response.body = reply->readAll();
+    }
+    reply->deleteLater();
+    return response;
 }
