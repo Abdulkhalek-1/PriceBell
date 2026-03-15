@@ -23,7 +23,7 @@ jobs:
             build-essential cmake \
             qtbase5-dev qttools5-dev qttools5-dev-tools \
             libqt5svg5-dev libqt5sql5-sqlite \
-            libfuse2 file
+            libfuse2 file librsvg2-bin
 
       - name: Configure and build
         run: |
@@ -49,6 +49,9 @@ jobs:
           cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
 
           cp PriceBell.desktop AppDir/
+
+          # linuxdeploy needs a PNG icon for the AppDir root
+          rsvg-convert -w 256 -h 256 assets/logo.svg -o AppDir/pricebell.png
           cp assets/logo.svg AppDir/pricebell.svg
 
       - name: Download linuxdeploy
@@ -65,7 +68,7 @@ jobs:
             --plugin qt \
             --output appimage \
             --desktop-file AppDir/PriceBell.desktop \
-            --icon-file AppDir/pricebell.svg
+            --icon-file AppDir/pricebell.png
           mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-x86_64.AppImage
 
       - name: Generate changelog
