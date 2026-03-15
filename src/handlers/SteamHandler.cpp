@@ -1,19 +1,19 @@
 #include "handlers/SteamHandler.hpp"
 #include "utils/Logger.hpp"
 
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QUrl>
-#include <QEventLoop>
 #include <regex>
 
 // Steam Store API endpoint
 static const char* kSteamApiBase =
     "https://store.steampowered.com/api/appdetails?appids=%s&cc=us&filters=price_overview";
+
+SteamHandler::SteamHandler(HttpClient* http)
+    : m_http(http)
+{}
 
 std::string SteamHandler::extractAppId(const std::string& url) {
     // Match patterns like /app/730/ or /app/730
@@ -24,7 +24,15 @@ std::string SteamHandler::extractAppId(const std::string& url) {
     return {};
 }
 
+bool SteamHandler::validateUrl(const std::string& url) const {
+    return url.find("https://store.steampowered.com/app/") == 0;
+}
+
 FetchResult SteamHandler::fetchProduct(const std::string& url) {
+    if (!validateUrl(url)) {
+        return FetchResult{false, 0.0f, 0.0f, "Invalid URL for this handler"};
+    }
+
     FetchResult result;
 
     std::string appId = extractAppId(url);
@@ -38,25 +46,14 @@ FetchResult SteamHandler::fetchProduct(const std::string& url) {
     char apiUrl[256];
     std::snprintf(apiUrl, sizeof(apiUrl), kSteamApiBase, appId.c_str());
 
-    // Synchronous fetch using QEventLoop (runs in background thread via PricePoller)
-    QNetworkAccessManager mgr;
-    QUrl _url(QString::fromStdString(apiUrl)); QNetworkRequest request{_url};
-    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell/2.0");
-
-    QEventLoop loop;
-    QNetworkReply* reply = mgr.get(request);
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
-
-    if (reply->error() != QNetworkReply::NoError) {
-        result.errorMsg = reply->errorString().toStdString();
+    auto resp = m_http->getSync(QUrl(QString::fromStdString(apiUrl)));
+    if (!resp.ok) {
+        result.errorMsg = resp.error.toStdString();
         Logger::error("Steam fetch error: " + result.errorMsg);
-        reply->deleteLater();
         return result;
     }
 
-    QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-    reply->deleteLater();
+    QJsonDocument doc = QJsonDocument::fromJson(resp.body);
 
     // Response shape: { "<appid>": { "success": true, "data": { "price_overview": { ... } } } }
     QJsonObject root   = doc.object();

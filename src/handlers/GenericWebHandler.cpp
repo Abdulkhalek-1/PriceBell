@@ -1,18 +1,15 @@
 #include "handlers/GenericWebHandler.hpp"
 #include "utils/Logger.hpp"
 
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QUrl>
-#include <QEventLoop>
 #include <sstream>
 
-GenericWebHandler::GenericWebHandler(const SourceConfig& config)
+GenericWebHandler::GenericWebHandler(const SourceConfig& config, HttpClient* http)
     : m_config(config)
+    , m_http(http)
 {}
 
 // Simple dot-notation JSON path extractor.
@@ -38,32 +35,34 @@ float GenericWebHandler::extractJsonPath(const std::string& json, const std::str
     return 0.0f;
 }
 
+bool GenericWebHandler::validateUrl(const std::string& url) const {
+    return url.find("https://") == 0 || url.find("http://") == 0;
+}
+
 FetchResult GenericWebHandler::fetchProduct(const std::string& url) {
+    if (!validateUrl(url)) {
+        return FetchResult{false, 0.0f, 0.0f, "Invalid URL for this handler"};
+    }
+
     FetchResult result;
 
     // Build request URL: replace {url} template placeholder if present
     QString requestUrl = QString::fromStdString(m_config.urlTemplate.empty() ? url : m_config.urlTemplate);
     requestUrl.replace("{url}", QString::fromStdString(url));
 
-    QNetworkAccessManager mgr;
-    QUrl _url(requestUrl); QNetworkRequest request{_url};
-    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell/2.0");
-
-    QEventLoop loop;
-    QNetworkReply* reply = mgr.get(request);
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
-
-    if (reply->error() != QNetworkReply::NoError) {
-        result.errorMsg = reply->errorString().toStdString();
+    auto resp = m_http->getSync(QUrl(requestUrl));
+    if (!resp.ok) {
+        result.errorMsg = resp.error.toStdString();
         Logger::error("GenericWebHandler fetch error [" + m_config.id + "]: " + result.errorMsg);
-        reply->deleteLater();
         return result;
     }
 
-    std::string body = reply->readAll().toStdString();
-    reply->deleteLater();
+    QJsonDocument doc = QJsonDocument::fromJson(resp.body);
+    if (doc.isNull()) {
+        return FetchResult{false, 0.0f, 0.0f, "Invalid JSON response"};
+    }
 
+    std::string body = resp.body.toStdString();
     result.price    = extractJsonPath(body, m_config.pricePath);
     result.discount = extractJsonPath(body, m_config.discountPath);
     result.success  = true;
