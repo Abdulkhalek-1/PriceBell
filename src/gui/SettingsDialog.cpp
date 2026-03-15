@@ -1,5 +1,6 @@
 #include "gui/SettingsDialog.hpp"
 #include "utils/AutoStartManager.hpp"
+#include "utils/SettingsProvider.hpp"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -17,7 +18,7 @@ SettingsDialog::SettingsDialog(QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle(tr("Settings"));
-    resize(480, 520);
+    resize(480, 560);
     setupUi();
     loadSettings();
 }
@@ -26,57 +27,75 @@ void SettingsDialog::setupUi() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(12, 14, 12, 12);
 
-    // ── Startup ──────────────────────────────────────────────────────────────
+    // -- Startup ------------------------------------------------------------------
     QGroupBox* startupGroup = new QGroupBox(tr("Startup"), this);
     QVBoxLayout* startupLayout = new QVBoxLayout(startupGroup);
     m_autoStartCheck = new QCheckBox(tr("Open on Startup"), this);
+    m_autoStartCheck->setToolTip(tr("Automatically launch PriceBell when you log in"));
     startupLayout->addWidget(m_autoStartCheck);
     mainLayout->addWidget(startupGroup);
 
-    // ── Updates ─────────────────────────────────────────────────────────────────
+    // -- Updates ------------------------------------------------------------------
     QGroupBox* updateGroup = new QGroupBox(tr("Updates"), this);
     QVBoxLayout* updateLayout = new QVBoxLayout(updateGroup);
     m_autoUpdateCheck = new QCheckBox(tr("Check for updates on startup"), this);
+    m_autoUpdateCheck->setToolTip(tr("Automatically check for new versions when the app starts"));
     updateLayout->addWidget(m_autoUpdateCheck);
     mainLayout->addWidget(updateGroup);
 
-    // ── Udemy ─────────────────────────────────────────────────────────────────
+    // -- Notifications ------------------------------------------------------------
+    QGroupBox* notifGroup = new QGroupBox(tr("Notifications"), this);
+    QVBoxLayout* notifLayout = new QVBoxLayout(notifGroup);
+    m_notificationSoundCheck = new QCheckBox(tr("Play notification sound"), this);
+    m_notificationSoundCheck->setToolTip(tr("Play a sound when a price alert is triggered"));
+    notifLayout->addWidget(m_notificationSoundCheck);
+    mainLayout->addWidget(notifGroup);
+
+    // -- Udemy --------------------------------------------------------------------
     QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), this);
     QFormLayout* udemyForm = new QFormLayout(udemyGroup);
     m_udemyClientId     = new QLineEdit(this);
+    m_udemyClientId->setToolTip(tr("Required for Udemy price tracking"));
     m_udemyClientSecret = new QLineEdit(this);
     m_udemyClientSecret->setEchoMode(QLineEdit::Password);
+    m_udemyClientSecret->setToolTip(tr("Required for Udemy price tracking"));
     udemyForm->addRow(tr("Client ID:"),     m_udemyClientId);
     udemyForm->addRow(tr("Client Secret:"), m_udemyClientSecret);
     mainLayout->addWidget(udemyGroup);
 
-    // ── Amazon ────────────────────────────────────────────────────────────────
+    // -- Amazon -------------------------------------------------------------------
     QGroupBox* amazonGroup = new QGroupBox(tr("Amazon PA API Credentials"), this);
     QFormLayout* amazonForm = new QFormLayout(amazonGroup);
     m_amazonAccessKey  = new QLineEdit(this);
+    m_amazonAccessKey->setToolTip(tr("Required for Amazon price tracking"));
     m_amazonSecretKey  = new QLineEdit(this);
     m_amazonSecretKey->setEchoMode(QLineEdit::Password);
+    m_amazonSecretKey->setToolTip(tr("Required for Amazon price tracking"));
     m_amazonPartnerTag = new QLineEdit(this);
+    m_amazonPartnerTag->setToolTip(tr("Required for Amazon price tracking"));
     amazonForm->addRow(tr("Access Key:"),  m_amazonAccessKey);
     amazonForm->addRow(tr("Secret Key:"),  m_amazonSecretKey);
     amazonForm->addRow(tr("Partner Tag:"), m_amazonPartnerTag);
     mainLayout->addWidget(amazonGroup);
 
-    // ── Polling ───────────────────────────────────────────────────────────────
+    // -- Polling ------------------------------------------------------------------
     QGroupBox* pollingGroup = new QGroupBox(tr("Polling"), this);
     QFormLayout* pollingForm = new QFormLayout(pollingGroup);
     m_defaultInterval = new QSpinBox(this);
     m_defaultInterval->setRange(30, 86400);
     m_defaultInterval->setSuffix(tr(" sec"));
     m_defaultInterval->setValue(3600);
+    m_defaultInterval->setToolTip(tr("Default interval for new products (30s – 24h)"));
     pollingForm->addRow(tr("Default Check Interval:"), m_defaultInterval);
     mainLayout->addWidget(pollingGroup);
 
-    // ── Plugin directory ──────────────────────────────────────────────────────
+    // -- Plugin directory ---------------------------------------------------------
     QGroupBox* pluginGroup = new QGroupBox(tr("Plugin Directory"), this);
     QHBoxLayout* pluginLayout = new QHBoxLayout(pluginGroup);
     m_pluginDir = new QLineEdit(this);
+    m_pluginDir->setToolTip(tr("Directory to scan for native price handler plugins"));
     QPushButton* browseBtn = new QPushButton(tr("Browse…"), this);
+    browseBtn->setToolTip(tr("Choose plugin directory"));
     pluginLayout->addWidget(m_pluginDir);
     pluginLayout->addWidget(browseBtn);
     mainLayout->addWidget(pluginGroup);
@@ -85,10 +104,11 @@ void SettingsDialog::setupUi() {
         if (!dir.isEmpty()) m_pluginDir->setText(dir);
     });
 
-    // ── Language ──────────────────────────────────────────────────────────────
+    // -- Language -----------------------------------------------------------------
     QGroupBox* langGroup = new QGroupBox(tr("Language"), this);
     QFormLayout* langForm = new QFormLayout(langGroup);
     m_languageCombo = new QComboBox(this);
+    m_languageCombo->setToolTip(tr("Application display language (requires restart)"));
     m_languageCombo->addItem("English", "en");
     m_languageCombo->addItem(QString::fromUtf8("\330\247\331\204\330\271\330\261\330\250\331\212\330\251"), "ar");
     m_languageCombo->addItem(QString::fromUtf8("Fran\303\247ais"), "fr");
@@ -96,7 +116,7 @@ void SettingsDialog::setupUi() {
     langForm->addRow(tr("Language:"), m_languageCombo);
     mainLayout->addWidget(langGroup);
 
-    // ── Buttons ───────────────────────────────────────────────────────────────
+    // -- Buttons ------------------------------------------------------------------
     QDialogButtonBox* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     mainLayout->addWidget(buttons);
@@ -105,38 +125,41 @@ void SettingsDialog::setupUi() {
 }
 
 void SettingsDialog::loadSettings() {
-    QSettings s("PriceBell", "PriceBell");
-    m_udemyClientId->setText(s.value("udemy/client_id").toString());
-    m_udemyClientSecret->setText(s.value("udemy/client_secret").toString());
-    m_amazonAccessKey->setText(s.value("amazon/access_key").toString());
-    m_amazonSecretKey->setText(s.value("amazon/secret_key").toString());
-    m_amazonPartnerTag->setText(s.value("amazon/partner_tag").toString());
-    m_defaultInterval->setValue(s.value("polling/default_interval", 3600).toInt());
-    m_pluginDir->setText(s.value("plugins/directory",
-        QApplication::applicationDirPath() + "/plugins").toString());
+    auto& sp = SettingsProvider::instance();
 
-    QString lang = s.value("language", "en").toString();
+    m_udemyClientId->setText(sp.udemyClientId());
+    m_udemyClientSecret->setText(sp.udemyClientSecret());
+    m_amazonAccessKey->setText(sp.amazonAccessKey());
+    m_amazonSecretKey->setText(sp.amazonSecretKey());
+    m_amazonPartnerTag->setText(sp.amazonPartnerTag());
+    m_defaultInterval->setValue(sp.defaultInterval());
+    m_pluginDir->setText(sp.pluginDirectory());
+    m_notificationSoundCheck->setChecked(sp.notificationSoundEnabled());
+
+    QString lang = sp.language();
     int langIdx = m_languageCombo->findData(lang);
     if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
 
     m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
-    m_autoUpdateCheck->setChecked(s.value("updates/check_on_startup", true).toBool());
+    m_autoUpdateCheck->setChecked(sp.checkUpdatesOnStartup());
 }
 
 void SettingsDialog::saveSettings() {
-    QSettings s("PriceBell", "PriceBell");
-    s.setValue("udemy/client_id",           m_udemyClientId->text());
-    s.setValue("udemy/client_secret",       m_udemyClientSecret->text());
-    s.setValue("amazon/access_key",         m_amazonAccessKey->text());
-    s.setValue("amazon/secret_key",         m_amazonSecretKey->text());
-    s.setValue("amazon/partner_tag",        m_amazonPartnerTag->text());
-    s.setValue("polling/default_interval",  m_defaultInterval->value());
-    s.setValue("plugins/directory",         m_pluginDir->text());
-    s.setValue("updates/check_on_startup",  m_autoUpdateCheck->isChecked());
+    auto& sp = SettingsProvider::instance();
+
+    sp.setUdemyClientId(m_udemyClientId->text());
+    sp.setUdemyClientSecret(m_udemyClientSecret->text());
+    sp.setAmazonAccessKey(m_amazonAccessKey->text());
+    sp.setAmazonSecretKey(m_amazonSecretKey->text());
+    sp.setAmazonPartnerTag(m_amazonPartnerTag->text());
+    sp.setDefaultInterval(m_defaultInterval->value());
+    sp.setPluginDirectory(m_pluginDir->text());
+    sp.setCheckUpdatesOnStartup(m_autoUpdateCheck->isChecked());
+    sp.setNotificationSoundEnabled(m_notificationSoundCheck->isChecked());
 
     QString newLang = m_languageCombo->currentData().toString();
-    QString oldLang = s.value("language", "en").toString();
-    s.setValue("language", newLang);
+    QString oldLang = sp.language();
+    sp.setLanguage(newLang);
 
     if (newLang != oldLang) {
         m_restartNeeded = true;

@@ -1,22 +1,19 @@
 #pragma once
 
 #include "core/DataStructs.hpp"
-#include "core/PricePoller.hpp"
-#include "core/AlertManager.hpp"
-#include "core/PluginManager.hpp"
 
 #include <QMainWindow>
 #include <QTableWidget>
-#include <QThread>
 #include <vector>
 
+class AppController;
 class TrayIcon;
 class UpdateChecker;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(AppController* controller, QWidget* parent = nullptr);
     ~MainWindow() override;
 
 protected:
@@ -45,17 +42,13 @@ private:
     void setupUi();
     void setupMenu();
     void setupTray();
-    void setupPoller();
     void setupUpdateChecker();
     void loadProducts();
     void applyDarkTheme();
 
+    AppController*   m_controller;
     QTableWidget*    m_table;
     TrayIcon*        m_trayIcon;
-    PluginManager*   m_pluginManager;
-    AlertManager*    m_alertManager;
-    PricePoller*     m_poller;
-    QThread*         m_pollerThread;
     UpdateChecker*   m_updateChecker;
     bool             m_manualUpdateCheck = false;
     std::vector<Product> m_products;

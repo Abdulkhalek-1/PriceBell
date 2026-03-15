@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia)
 
 set(TS_FILES
     i18n/pricebell_en.ts
@@ -38,6 +38,7 @@ target_link_libraries(PriceBell
     Qt5::Sql
     Qt5::Network
     Qt5::Svg
+    Qt5::Multimedia
 )
 
 # Create plugins directory next to binary

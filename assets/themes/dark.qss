@@ -4,7 +4,7 @@
 QMainWindow, QDialog, QWidget {
     background-color: #1e1e2e;
     color: #cdd6f4;
-    font-family: "Segoe UI", "Inter", "SF Pro Text", sans-serif;
+    font-family: "Inter", "Segoe UI", "SF Pro Text", sans-serif;
     font-size: 13px;
 }
 
@@ -35,6 +35,10 @@ QHeaderView::section {
     border-right: 1px solid #45475a;
     font-weight: bold;
     font-size: 12px;
+}
+QTableCornerButton::section {
+    background-color: #313244;
+    border: none;
 }
 
 /* ── Buttons ───────────────────────────────────────────────────────────────── */

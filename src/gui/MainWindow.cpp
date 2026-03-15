@@ -3,10 +3,12 @@
 #include "gui/AlertHistoryDialog.hpp"
 #include "gui/SettingsDialog.hpp"
 #include "gui/TrayIcon.hpp"
-#include "storage/ProductRepository.hpp"
-#include "storage/Database.hpp"
+#include "core/AppController.hpp"
+#include "core/PluginManager.hpp"
 #include "utils/Logger.hpp"
 #include "utils/UpdateChecker.hpp"
+#include "utils/CurrencyUtils.hpp"
+#include "utils/SettingsProvider.hpp"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -26,35 +28,30 @@
 #include <QSet>
 #include <chrono>
 
-MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(AppController* controller, QWidget* parent)
     : QMainWindow(parent)
+    , m_controller(controller)
 {
     setWindowTitle(tr("PriceBell"));
     setMinimumSize(800, 500);
-
-    m_pluginManager = new PluginManager();
-    m_pluginManager->registerBuiltins();
-
-    QSettings s("PriceBell", "PriceBell");
-    QString pluginDir = s.value("plugins/directory",
-        QApplication::applicationDirPath() + "/plugins").toString();
-    m_pluginManager->loadPlugins(pluginDir);
-    m_pluginManager->loadJsonSources();
-
-    m_alertManager = new AlertManager(this);
 
     applyDarkTheme();
     setupUi();
     setupMenu();
     setupTray();
-    setupPoller();
     loadProducts();
     setupUpdateChecker();
+
+    // Connect controller signals
+    connect(m_controller, &AppController::priceChanged,
+            this, &MainWindow::onProductPriceChanged);
+    connect(m_controller, &AppController::checkNowFinished,
+            this, &MainWindow::onCheckNowFinished);
+    connect(m_controller, &AppController::alertTriggered,
+            this, &MainWindow::onAlertTriggered);
 }
 
 MainWindow::~MainWindow() {
-    m_pollerThread->quit();
-    m_pollerThread->wait();
 }
 
 void MainWindow::applyDarkTheme() {
@@ -63,75 +60,7 @@ void MainWindow::applyDarkTheme() {
         qApp->setStyleSheet(QString::fromUtf8(qss.readAll()));
         qss.close();
     } else {
-        // Fallback inline dark stylesheet
-        qApp->setStyleSheet(R"(
-            QMainWindow, QDialog, QWidget {
-                background-color: #1e1e2e;
-                color: #cdd6f4;
-                font-family: "Segoe UI", "Inter", sans-serif;
-                font-size: 13px;
-            }
-            QTableWidget {
-                background-color: #181825;
-                alternate-background-color: #1e1e2e;
-                gridline-color: #313244;
-                border: 1px solid #313244;
-                border-radius: 4px;
-            }
-            QTableWidget::item:selected {
-                background-color: #45475a;
-                color: #cdd6f4;
-            }
-            QHeaderView::section {
-                background-color: #313244;
-                color: #cba6f7;
-                padding: 6px;
-                border: none;
-                font-weight: bold;
-            }
-            QPushButton {
-                background-color: #313244;
-                color: #cdd6f4;
-                border: 1px solid #45475a;
-                border-radius: 4px;
-                padding: 6px 14px;
-            }
-            QPushButton:hover {
-                background-color: #45475a;
-                border-color: #cba6f7;
-            }
-            QPushButton:pressed { background-color: #585b70; }
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
-                background-color: #181825;
-                color: #cdd6f4;
-                border: 1px solid #45475a;
-                border-radius: 4px;
-                padding: 4px 8px;
-            }
-            QGroupBox {
-                border: 1px solid #313244;
-                border-radius: 6px;
-                margin-top: 16px;
-                padding: 20px 8px 8px 8px;
-                color: #cba6f7;
-                font-weight: bold;
-            }
-            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 2px 6px; }
-            QMenuBar {
-                background-color: #181825;
-                color: #cdd6f4;
-            }
-            QMenuBar::item:selected { background-color: #313244; }
-            QMenu { background-color: #1e1e2e; border: 1px solid #313244; }
-            QMenu::item:selected { background-color: #45475a; }
-            QListWidget {
-                background-color: #181825;
-                border: 1px solid #313244;
-                border-radius: 4px;
-            }
-            QLabel#dialogTitle { font-size: 16px; font-weight: bold; color: #cba6f7; }
-            QDialogButtonBox QPushButton { min-width: 80px; }
-        )");
+        Logger::error("Failed to load dark.qss from resources — UI will use default style.");
     }
 }
 
@@ -142,7 +71,7 @@ void MainWindow::setupUi() {
     layout->setContentsMargins(12, 8, 12, 8);
     layout->setSpacing(8);
 
-    // ── Toolbar ───────────────────────────────────────────────────────────────
+    // -- Toolbar ---------------------------------------------------------------
     QHBoxLayout* toolbar = new QHBoxLayout();
     QPushButton* addBtn      = new QPushButton(tr("+ Add Product"),   this);
     QPushButton* editBtn     = new QPushButton(tr("✎ Edit"),           this);
@@ -150,6 +79,14 @@ void MainWindow::setupUi() {
     QPushButton* checkNowBtn = new QPushButton(tr("🔄 Check Now"),     this);
     QPushButton* alertsBtn   = new QPushButton(tr("🔔 Alert History"), this);
     QPushButton* settingsBtn = new QPushButton(tr("⚙ Settings"),       this);
+
+    // Tooltips for buttons
+    addBtn->setToolTip(tr("Add a new product to track"));
+    editBtn->setToolTip(tr("Edit selected product"));
+    removeBtn->setToolTip(tr("Remove selected product"));
+    checkNowBtn->setToolTip(tr("Check price now"));
+    alertsBtn->setToolTip(tr("View alert history"));
+    settingsBtn->setToolTip(tr("Open settings"));
 
     toolbar->addWidget(addBtn);
     toolbar->addWidget(editBtn);
@@ -167,12 +104,12 @@ void MainWindow::setupUi() {
     connect(alertsBtn,   &QPushButton::clicked, this, &MainWindow::showAlertHistory);
     connect(settingsBtn, &QPushButton::clicked, this, &MainWindow::showSettings);
 
-    // ── Product table ─────────────────────────────────────────────────────────
+    // -- Product table ---------------------------------------------------------
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(7);
+    m_table->setColumnCount(8);
     m_table->setHorizontalHeaderLabels({
         tr("Name"), tr("Source"), tr("Current Price"), tr("Discount %"),
-        tr("Status"), tr("Last Checked"), tr("Interval (s)")
+        tr("Status"), tr("Last Checked"), tr("Conditions"), tr("Interval (s)")
     });
     m_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -180,6 +117,16 @@ void MainWindow::setupUi() {
     m_table->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_table->setAlternatingRowColors(true);
     layout->addWidget(m_table);
+
+    // Tooltips for table headers
+    m_table->horizontalHeaderItem(0)->setToolTip(tr("Product name"));
+    m_table->horizontalHeaderItem(1)->setToolTip(tr("Price source"));
+    m_table->horizontalHeaderItem(2)->setToolTip(tr("Current tracked price"));
+    m_table->horizontalHeaderItem(3)->setToolTip(tr("Current discount percentage"));
+    m_table->horizontalHeaderItem(4)->setToolTip(tr("Monitoring status"));
+    m_table->horizontalHeaderItem(5)->setToolTip(tr("Last time price was checked"));
+    m_table->horizontalHeaderItem(6)->setToolTip(tr("Alert conditions for this product"));
+    m_table->horizontalHeaderItem(7)->setToolTip(tr("How often price is checked (seconds)"));
 }
 
 void MainWindow::setupMenu() {
@@ -213,22 +160,7 @@ void MainWindow::setupTray() {
     m_trayIcon = new TrayIcon(this, this);
     connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &QWidget::show);
     connect(m_trayIcon, &TrayIcon::quitRequested, qApp, &QApplication::quit);
-    connect(m_alertManager, &AlertManager::alertTriggered, this, &MainWindow::onAlertTriggered);
     m_trayIcon->show();
-}
-
-void MainWindow::setupPoller() {
-    m_poller       = new PricePoller(m_pluginManager);
-    m_pollerThread = new QThread(this);
-
-    m_poller->moveToThread(m_pollerThread);
-
-    connect(m_pollerThread, &QThread::started, m_poller, &PricePoller::start);
-    connect(m_poller, &PricePoller::priceUpdated,       m_alertManager, &AlertManager::onPriceUpdated);
-    connect(m_poller, &PricePoller::productPriceChanged, this,           &MainWindow::onProductPriceChanged);
-    connect(m_poller, &PricePoller::checkNowFinished,    this,           &MainWindow::onCheckNowFinished);
-
-    m_pollerThread->start();
 }
 
 void MainWindow::setupUpdateChecker() {
@@ -248,8 +180,7 @@ void MainWindow::setupUpdateChecker() {
 }
 
 void MainWindow::loadProducts() {
-    m_products = ProductRepository::findAll();
-    m_poller->setProducts(m_products);
+    m_products = m_controller->products();
     refreshTable();
 }
 
@@ -278,13 +209,29 @@ void MainWindow::refreshTable() {
         QString lastChecked = time_t == 0 ? tr("Never")
             : QDateTime::fromSecsSinceEpoch(static_cast<qint64>(time_t)).toString("HH:mm:ss");
 
+        // Build conditions string
+        QStringList condStrings;
+        for (const auto& f : p.filters) {
+            if (f.type == ConditionType::PRICE_LESS_EQUAL)
+                condStrings << tr("Price <= %1").arg(CurrencyUtils::formatPrice(f.value, p.currency));
+            else
+                condStrings << tr("Discount >= %1%").arg(static_cast<int>(f.value));
+        }
+        QString condText = condStrings.join(", ");
+
         m_table->setItem(row, 0, cell(QString::fromStdString(p.name)));
         m_table->setItem(row, 1, cell(source));
-        m_table->setItem(row, 2, cell(tr("$%1").arg(p.currentPrice, 0, 'f', 2)));
+        m_table->setItem(row, 2, cell(CurrencyUtils::formatPrice(p.currentPrice, p.currency)));
         m_table->setItem(row, 3, cell(QString("%1%").arg(static_cast<int>(p.discount))));
         m_table->setItem(row, 4, cell(p.isActive ? tr("Watching") : tr("Paused")));
         m_table->setItem(row, 5, cell(lastChecked));
-        m_table->setItem(row, 6, cell(QString::number(p.checkInterval.count())));
+        m_table->setItem(row, 6, cell(condText));
+        m_table->setItem(row, 7, cell(QString::number(p.checkInterval.count())));
+
+        // Set full conditions text as tooltip if truncated
+        if (!condText.isEmpty()) {
+            m_table->item(row, 6)->setToolTip(condText);
+        }
 
         // Store product id for row operations
         m_table->item(row, 0)->setData(Qt::UserRole, p.id);
@@ -292,16 +239,15 @@ void MainWindow::refreshTable() {
 }
 
 void MainWindow::addProduct() {
-    ProductDialog dlg(m_pluginManager, this);
+    ProductDialog dlg(m_controller->pluginManager(), this);
     if (dlg.exec() != QDialog::Accepted) return;
 
     Product product = dlg.getProduct();
-    if (!ProductRepository::save(product)) {
+    if (!m_controller->addProduct(product)) {
         QMessageBox::critical(this, tr("Error"), tr("Failed to save product to database."));
         return;
     }
     m_products.push_back(product);
-    m_poller->onProductAdded(product);
     refreshTable();
 }
 
@@ -316,17 +262,16 @@ void MainWindow::editProduct() {
                            [productId](const Product& p){ return p.id == productId; });
     if (it == m_products.end()) return;
 
-    ProductDialog dlg(m_pluginManager, *it, this);
+    ProductDialog dlg(m_controller->pluginManager(), *it, this);
     if (dlg.exec() != QDialog::Accepted) return;
 
     Product updated = dlg.getProduct();
     updated.id = productId;
-    if (!ProductRepository::update(updated)) {
+    if (!m_controller->editProduct(updated)) {
         QMessageBox::critical(this, tr("Error"), tr("Failed to update product."));
         return;
     }
     *it = updated;
-    m_poller->onProductAdded(updated); // re-schedules the timer
     refreshTable();
 }
 
@@ -344,8 +289,7 @@ void MainWindow::removeProduct() {
         QMessageBox::Yes | QMessageBox::No);
     if (reply != QMessageBox::Yes) return;
 
-    ProductRepository::remove(productId);
-    m_poller->onProductRemoved(productId);
+    m_controller->removeProduct(productId);
     m_products.erase(std::remove_if(m_products.begin(), m_products.end(),
                      [productId](const Product& p){ return p.id == productId; }),
                      m_products.end());
@@ -361,10 +305,9 @@ void MainWindow::showSettings() {
     SettingsDialog dlg(this);
     if (dlg.exec() == QDialog::Accepted) {
         // Reload plugins in case directory changed
-        QSettings s("PriceBell", "PriceBell");
-        QString dir = s.value("plugins/directory").toString();
-        m_pluginManager->loadPlugins(dir);
-        m_pluginManager->loadJsonSources();
+        QString dir = SettingsProvider::instance().pluginDirectory();
+        m_controller->pluginManager()->loadPlugins(dir);
+        m_controller->pluginManager()->loadJsonSources();
 
         if (dlg.isRestartNeeded()) {
             qApp->exit(RESTART_EXIT_CODE);
@@ -376,7 +319,7 @@ void MainWindow::restartApp() {
     qApp->exit(RESTART_EXIT_CODE);
 }
 
-// ── Check Now ────────────────────────────────────────────────────────────────
+// -- Check Now -----------------------------------------------------------------
 
 void MainWindow::checkNow() {
     QSet<int> selectedRows;
@@ -398,9 +341,7 @@ void MainWindow::checkNow() {
         m_table->item(row, 4)->setText(tr("Checking..."));
         m_table->item(row, 4)->setForeground(QColor("#f9e2af"));
 
-        QMetaObject::invokeMethod(m_poller, "checkNow",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(int, productId));
+        m_controller->checkNow(productId);
     }
 }
 
@@ -423,7 +364,7 @@ void MainWindow::onCheckNowFinished(int productId, bool success, float, float) {
     }
 }
 
-// ── Update checker ───────────────────────────────────────────────────────────
+// -- Update checker ------------------------------------------------------------
 
 void MainWindow::checkForUpdates() {
     m_manualUpdateCheck = true;
@@ -465,7 +406,7 @@ void MainWindow::onUpdateCheckFailed(const QString& errorMsg) {
     }
 }
 
-// ── Events ───────────────────────────────────────────────────────────────────
+// -- Events --------------------------------------------------------------------
 
 void MainWindow::onAlertTriggered(AlertEvent event) {
     m_trayIcon->showAlert(event);
@@ -483,19 +424,21 @@ void MainWindow::onAlertTriggered(AlertEvent event) {
 void MainWindow::onProductPriceChanged(int productId, float newPrice, float newDiscount) {
     for (int row = 0; row < m_table->rowCount(); ++row) {
         if (m_table->item(row, 0)->data(Qt::UserRole).toInt() == productId) {
-            m_table->item(row, 2)->setText(tr("$%1").arg(newPrice, 0, 'f', 2));
-            m_table->item(row, 3)->setText(QString("%1%").arg(static_cast<int>(newDiscount)));
-            m_table->item(row, 5)->setText(
-                QDateTime::currentDateTime().toString("HH:mm:ss"));
-            // Update in-memory product
+            // Find the product to get its currency
+            std::string currency = "USD";
             for (auto& p : m_products) {
                 if (p.id == productId) {
                     p.currentPrice = newPrice;
                     p.discount     = newDiscount;
-                    ProductRepository::update(p);
+                    currency = p.currency;
                     break;
                 }
             }
+
+            m_table->item(row, 2)->setText(CurrencyUtils::formatPrice(newPrice, currency));
+            m_table->item(row, 3)->setText(QString("%1%").arg(static_cast<int>(newDiscount)));
+            m_table->item(row, 5)->setText(
+                QDateTime::currentDateTime().toString("HH:mm:ss"));
             break;
         }
     }
