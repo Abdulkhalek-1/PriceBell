@@ -139,6 +139,10 @@ bool Database::applyMigrations() {
     const QVector<MigrationFn> migrations = {
         // Migration 0→1: baseline schema (already created above, no-op)
         [](QSqlQuery&) -> bool { return true; },
+        // Migration 1→2: add currency column to products
+        [](QSqlQuery& q) -> bool {
+            return q.exec("ALTER TABLE products ADD COLUMN currency TEXT DEFAULT 'USD';");
+        },
     };
 
     int currentVersion = getSchemaVersion();

@@ -100,6 +100,64 @@ static void test_remove_product_cascades() {
     assert(alerts.empty() && "Alerts should cascade-delete with product");
 }
 
+static void test_find_all_loads_conditions() {
+    // Save 3 products with 2 conditions each
+    for (int i = 0; i < 3; ++i) {
+        Product p;
+        p.name          = "Bulk Product " + std::to_string(i);
+        p.url           = "https://example.com/" + std::to_string(i);
+        p.source        = SourceType::STEAM;
+        p.currentPrice  = 10.0f * (i + 1);
+        p.filters       = {
+            {0, ConditionType::PRICE_LESS_EQUAL, 5.0f},
+            {0, ConditionType::DISCOUNT_GREATER_EQUAL, 50.0f}
+        };
+        bool saved = ProductRepository::save(p);
+        assert(saved && "Bulk product should save");
+    }
+
+    auto all = ProductRepository::findAll();
+    int withConditions = 0;
+    for (const auto& p : all) {
+        if (p.name.find("Bulk Product") != std::string::npos) {
+            assert(p.filters.size() == 2 && "Each bulk product should have 2 conditions");
+            ++withConditions;
+        }
+    }
+    assert(withConditions == 3 && "Should find all 3 bulk products with conditions");
+}
+
+static void test_currency_persistence() {
+    Product p;
+    p.name          = "Euro Product";
+    p.url           = "https://example.com/euro";
+    p.source        = SourceType::AMAZON;
+    p.currentPrice  = 29.99f;
+    p.currency      = "EUR";
+
+    bool saved = ProductRepository::save(p);
+    assert(saved && "Product with EUR currency should save");
+
+    auto found = ProductRepository::findById(p.id);
+    assert(found.has_value() && "Should find product by id");
+    assert(found->currency == "EUR" && "Currency should be EUR");
+
+    // Test default currency
+    Product p2;
+    p2.name         = "Default Currency Product";
+    p2.url          = "https://example.com/default";
+    p2.source       = SourceType::STEAM;
+    p2.currentPrice = 19.99f;
+    // currency defaults to "USD"
+
+    bool saved2 = ProductRepository::save(p2);
+    assert(saved2 && "Product with default currency should save");
+
+    auto found2 = ProductRepository::findById(p2.id);
+    assert(found2.has_value() && "Should find default currency product");
+    assert(found2->currency == "USD" && "Default currency should be USD");
+}
+
 int main() {
     std::cout << "Running Repository tests..." << std::endl;
 
@@ -110,6 +168,8 @@ int main() {
     test_save_and_find_alert();
     test_dismiss_alert();
     test_remove_product_cascades();
+    test_find_all_loads_conditions();
+    test_currency_persistence();
 
     Database::close();
     std::cout << "All Repository tests passed." << std::endl;
