@@ -36,23 +36,16 @@ jobs:
       - name: Prepare AppDir
         run: |
           mkdir -p AppDir/usr/bin
-          mkdir -p AppDir/usr/share/applications
-          mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
           mkdir -p AppDir/usr/share/PriceBell/assets
           mkdir -p AppDir/usr/share/PriceBell/i18n
           mkdir -p AppDir/usr/share/PriceBell/plugins
 
           cp build/PriceBell AppDir/usr/bin/
-          cp PriceBell.desktop AppDir/usr/share/applications/
-          cp assets/logo.svg AppDir/usr/share/icons/hicolor/scalable/apps/pricebell.svg
           cp -r build/assets/* AppDir/usr/share/PriceBell/assets/ 2>/dev/null || true
           cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
 
-          cp PriceBell.desktop AppDir/
-
-          # linuxdeploy needs a PNG icon for the AppDir root
-          rsvg-convert -w 256 -h 256 assets/logo.svg -o AppDir/pricebell.png
-          cp assets/logo.svg AppDir/pricebell.svg
+          # Generate PNG icon for linuxdeploy (it cannot use SVG for AppDir root)
+          rsvg-convert -w 256 -h 256 assets/logo.svg -o pricebell.png
 
       - name: Download linuxdeploy
         run: |
@@ -65,10 +58,11 @@ jobs:
           export QMAKE=$(which qmake)
           ./linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
+            --executable AppDir/usr/bin/PriceBell \
             --plugin qt \
             --output appimage \
-            --desktop-file AppDir/PriceBell.desktop \
-            --icon-file AppDir/pricebell.png
+            --desktop-file PriceBell.desktop \
+            --icon-file pricebell.png
           mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-x86_64.AppImage
 
       - name: Generate changelog
