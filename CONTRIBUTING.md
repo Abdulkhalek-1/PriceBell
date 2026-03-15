@@ -28,8 +28,11 @@ Follow these conventions to keep the codebase consistent:
 - **Method names**: camelCase (e.g., `fetchProduct`, `isMatch`)
 - **File extensions**: `.hpp` for headers, `.cpp` for implementations
 - **Directory layout**: Headers in `include/<layer>/`, sources in `src/<layer>/`
-- **Interfaces**: Prefixed with `I` (e.g., `IPriceHandler`, `IPlugin`)
+- **Interfaces**: Prefixed with `I` (e.g., `IPriceHandler`, `IPlugin`, `IPlugin2`)
 - **Logging**: Use `Logger::info()`, `Logger::warn()`, and `Logger::error()` instead of raw `std::cout` or `qDebug()`
+- **Thread safety**: Use `QMetaObject::invokeMethod` with `Qt::QueuedConnection` when calling slots across threads (e.g., from AppController to PricePoller)
+- **Dependency injection**: Handlers receive their `HttpClient*` via `setHttpClient()` — the `PluginManager` creates the client lazily on the calling thread to satisfy Qt's thread-affinity requirements
+- **Icons**: Use SVG icons from `assets/icons/` via Qt resource paths (`:/assets/icons/...`) instead of emoji characters
 
 ## Commit Messages
 
@@ -75,8 +78,9 @@ docs: update plugin development guide
 ## Adding Tests
 
 - Test files go in `tests/`.
-- Follow the existing patterns in `test_price_checker.cpp` and `test_repository.cpp`.
+- Follow the existing patterns in `test_price_checker.cpp`, `test_repository.cpp`, `test_url_validation.cpp`, and `test_settings_provider.cpp`.
 - Repository tests use in-memory SQLite (`:memory:`) to avoid filesystem dependencies.
+- URL validation tests verify handler `validateUrl()` and `fetchProduct()` with invalid URLs.
 - Add new test targets in `CMakeLists.txt` following the existing test target structure.
 
 ## Database Migrations

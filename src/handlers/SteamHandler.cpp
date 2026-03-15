@@ -25,7 +25,11 @@ std::string SteamHandler::extractAppId(const std::string& url) {
 }
 
 bool SteamHandler::validateUrl(const std::string& url) const {
-    return url.find("https://store.steampowered.com/app/") == 0;
+    // Accept any store.steampowered.com URL that contains /app/<id>
+    // Covers /app/730/, /agecheck/app/730/, etc.
+    return (url.find("https://store.steampowered.com/") == 0
+         || url.find("http://store.steampowered.com/") == 0)
+        && url.find("/app/") != std::string::npos;
 }
 
 FetchResult SteamHandler::fetchProduct(const std::string& url) {

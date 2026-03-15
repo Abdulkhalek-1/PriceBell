@@ -54,4 +54,5 @@ private:
     QCheckBox* m_autoUpdateCheck;
     // Notification sound
     QCheckBox* m_notificationSoundCheck;
+    QLineEdit* m_soundPathEdit;
 };

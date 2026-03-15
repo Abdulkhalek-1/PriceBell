@@ -69,7 +69,10 @@ bool AppController::addProduct(Product& product) {
     if (!ProductRepository::save(product)) {
         return false;
     }
-    m_poller->onProductAdded(product);
+    // Must invoke on poller thread — PricePoller lives on m_pollerThread
+    QMetaObject::invokeMethod(m_poller, "onProductAdded",
+                              Qt::QueuedConnection,
+                              Q_ARG(Product, product));
     emit productAdded(product);
     return true;
 }
@@ -78,14 +81,20 @@ bool AppController::editProduct(const Product& product) {
     if (!ProductRepository::update(product)) {
         return false;
     }
-    m_poller->onProductAdded(product); // re-schedules the timer
+    // Must invoke on poller thread — re-schedules the timer
+    QMetaObject::invokeMethod(m_poller, "onProductAdded",
+                              Qt::QueuedConnection,
+                              Q_ARG(Product, product));
     emit productUpdated(product);
     return true;
 }
 
 bool AppController::removeProduct(int productId) {
     ProductRepository::remove(productId);
-    m_poller->onProductRemoved(productId);
+    // Must invoke on poller thread
+    QMetaObject::invokeMethod(m_poller, "onProductRemoved",
+                              Qt::QueuedConnection,
+                              Q_ARG(int, productId));
     emit productRemoved(productId);
     return true;
 }

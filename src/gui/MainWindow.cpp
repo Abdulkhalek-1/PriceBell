@@ -11,6 +11,7 @@
 #include "utils/SettingsProvider.hpp"
 
 #include <QApplication>
+#include <QIcon>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QToolBar>
@@ -73,12 +74,12 @@ void MainWindow::setupUi() {
 
     // -- Toolbar ---------------------------------------------------------------
     QHBoxLayout* toolbar = new QHBoxLayout();
-    QPushButton* addBtn      = new QPushButton(tr("+ Add Product"),   this);
-    QPushButton* editBtn     = new QPushButton(tr("✎ Edit"),           this);
-    QPushButton* removeBtn   = new QPushButton(tr("✕ Remove"),         this);
-    QPushButton* checkNowBtn = new QPushButton(tr("🔄 Check Now"),     this);
-    QPushButton* alertsBtn   = new QPushButton(tr("🔔 Alert History"), this);
-    QPushButton* settingsBtn = new QPushButton(tr("⚙ Settings"),       this);
+    QPushButton* addBtn      = new QPushButton(QIcon(":/assets/icons/add.svg"),     tr("Add Product"),   this);
+    QPushButton* editBtn     = new QPushButton(QIcon(":/assets/icons/edit.svg"),    tr("Edit"),           this);
+    QPushButton* removeBtn   = new QPushButton(QIcon(":/assets/icons/remove.svg"),  tr("Remove"),         this);
+    QPushButton* checkNowBtn = new QPushButton(QIcon(":/assets/icons/refresh.svg"), tr("Check Now"),     this);
+    QPushButton* alertsBtn   = new QPushButton(QIcon(":/assets/icons/history.svg"), tr("Alert History"), this);
+    QPushButton* settingsBtn = new QPushButton(QIcon(":/assets/icons/settings.svg"), tr("Settings"),      this);
 
     // Tooltips for buttons
     addBtn->setToolTip(tr("Add a new product to track"));
@@ -197,12 +198,28 @@ void MainWindow::refreshTable() {
         };
 
         QString source;
+        QIcon sourceIcon;
         switch (p.source) {
-            case SourceType::STEAM:  source = tr("Steam");  break;
-            case SourceType::UDEMY:  source = tr("Udemy");  break;
-            case SourceType::AMAZON: source = tr("Amazon"); break;
-            case SourceType::PLUGIN: source = QString::fromStdString(p.sourcePluginId); break;
-            default: source = tr("Generic"); break;
+            case SourceType::STEAM:
+                source = tr("Steam");
+                sourceIcon = QIcon(":/assets/icons/source_steam.svg");
+                break;
+            case SourceType::UDEMY:
+                source = tr("Udemy");
+                sourceIcon = QIcon(":/assets/icons/source_udemy.svg");
+                break;
+            case SourceType::AMAZON:
+                source = tr("Amazon");
+                sourceIcon = QIcon(":/assets/icons/source_amazon.svg");
+                break;
+            case SourceType::PLUGIN:
+                source = QString::fromStdString(p.sourcePluginId);
+                sourceIcon = QIcon(":/assets/icons/source_plugin.svg");
+                break;
+            default:
+                source = tr("Generic");
+                sourceIcon = QIcon(":/assets/icons/source_generic.svg");
+                break;
         }
 
         auto time_t = std::chrono::system_clock::to_time_t(p.lastChecked);
@@ -220,10 +237,20 @@ void MainWindow::refreshTable() {
         QString condText = condStrings.join(", ");
 
         m_table->setItem(row, 0, cell(QString::fromStdString(p.name)));
-        m_table->setItem(row, 1, cell(source));
+
+        auto* sourceItem = cell(source);
+        sourceItem->setIcon(sourceIcon);
+        m_table->setItem(row, 1, sourceItem);
+
         m_table->setItem(row, 2, cell(CurrencyUtils::formatPrice(p.currentPrice, p.currency)));
         m_table->setItem(row, 3, cell(QString("%1%").arg(static_cast<int>(p.discount))));
-        m_table->setItem(row, 4, cell(p.isActive ? tr("Watching") : tr("Paused")));
+
+        auto* statusItem = cell(p.isActive ? tr("Watching") : tr("Paused"));
+        statusItem->setIcon(p.isActive
+            ? QIcon(":/assets/icons/status_watching.svg")
+            : QIcon(":/assets/icons/status_paused.svg"));
+        m_table->setItem(row, 4, statusItem);
+
         m_table->setItem(row, 5, cell(lastChecked));
         m_table->setItem(row, 6, cell(condText));
         m_table->setItem(row, 7, cell(QString::number(p.checkInterval.count())));
@@ -350,12 +377,16 @@ void MainWindow::onCheckNowFinished(int productId, bool success, float, float) {
         if (m_table->item(row, 0)->data(Qt::UserRole).toInt() == productId) {
             if (!success) {
                 m_table->item(row, 4)->setText(tr("Error"));
+                m_table->item(row, 4)->setIcon(QIcon(":/assets/icons/status_error.svg"));
                 m_table->item(row, 4)->setForeground(QColor("#f38ba8"));
             } else {
                 auto it = std::find_if(m_products.begin(), m_products.end(),
                     [productId](const Product& p) { return p.id == productId; });
                 if (it != m_products.end()) {
                     m_table->item(row, 4)->setText(it->isActive ? tr("Watching") : tr("Paused"));
+                    m_table->item(row, 4)->setIcon(it->isActive
+                        ? QIcon(":/assets/icons/status_watching.svg")
+                        : QIcon(":/assets/icons/status_paused.svg"));
                     m_table->item(row, 4)->setForeground(QColor("#cdd6f4"));
                 }
             }
@@ -414,7 +445,8 @@ void MainWindow::onAlertTriggered(AlertEvent event) {
     // Highlight the matching row in the table
     for (int row = 0; row < m_table->rowCount(); ++row) {
         if (m_table->item(row, 0)->data(Qt::UserRole).toInt() == event.productId) {
-            m_table->item(row, 4)->setText(tr("🔔 Alert!"));
+            m_table->item(row, 4)->setText(tr("Alert!"));
+            m_table->item(row, 4)->setIcon(QIcon(":/assets/icons/status_alert.svg"));
             m_table->item(row, 4)->setForeground(QColor("#f38ba8")); // red
             break;
         }

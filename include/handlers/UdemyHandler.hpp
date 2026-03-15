@@ -12,6 +12,7 @@ public:
     FetchResult fetchProduct(const std::string& url) override;
     std::string handlerId()   const override { return "udemy"; }
     std::string displayName() const override { return "Udemy"; }
+    void setHttpClient(HttpClient* http) override { m_http = http; }
 
 private:
     HttpClient* m_http;

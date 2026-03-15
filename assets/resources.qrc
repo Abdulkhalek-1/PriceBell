@@ -1,8 +1,32 @@
 <RCC>
     <qresource prefix="/assets">
         <file>logo.svg</file>
+        <file>themes/dark.qss</file>
+        <!-- App icons -->
+        <file>icons/app_icon.svg</file>
         <file>icons/tray_normal.svg</file>
         <file>icons/tray_alert.svg</file>
-        <file>themes/dark.qss</file>
+        <!-- Toolbar icons -->
+        <file>icons/add.svg</file>
+        <file>icons/edit.svg</file>
+        <file>icons/remove.svg</file>
+        <file>icons/refresh.svg</file>
+        <file>icons/settings.svg</file>
+        <file>icons/history.svg</file>
+        <file>icons/search.svg</file>
+        <!-- Status icons -->
+        <file>icons/status_watching.svg</file>
+        <file>icons/status_paused.svg</file>
+        <file>icons/status_alert.svg</file>
+        <file>icons/status_error.svg</file>
+        <file>icons/notification_bell.svg</file>
+        <!-- Source icons -->
+        <file>icons/source_steam.svg</file>
+        <file>icons/source_udemy.svg</file>
+        <file>icons/source_amazon.svg</file>
+        <file>icons/source_generic.svg</file>
+        <file>icons/source_plugin.svg</file>
+        <!-- Sounds -->
+        <file>sounds/alert.wav</file>
     </qresource>
 </RCC>

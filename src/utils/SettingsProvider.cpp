@@ -101,6 +101,14 @@ void SettingsProvider::setNotificationSoundEnabled(bool enabled) {
     m_settings.setValue(kNotificationSound, enabled);
 }
 
+QString SettingsProvider::notificationSoundPath() const {
+    return m_settings.value(kNotificationSoundPath).toString();
+}
+
+void SettingsProvider::setNotificationSoundPath(const QString& path) {
+    m_settings.setValue(kNotificationSoundPath, path);
+}
+
 bool SettingsProvider::checkUpdatesOnStartup() const {
     return m_settings.value(kCheckUpdates, true).toBool();
 }

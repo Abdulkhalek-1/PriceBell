@@ -13,6 +13,7 @@
 #include <vector>
 
 class QPluginLoader;
+class HttpClient;
 
 // Manages all available price handlers — both built-in and dynamically loaded.
 //
@@ -57,6 +58,9 @@ private:
         QStringList urlPatterns; // empty for built-in handlers (no restriction)
     };
 
+    HttpClient* ensureHttpClient();
+
     QMap<QString, HandlerEntry>      m_handlers;
     QMap<QString, QPluginLoader*>    m_loaders;
+    HttpClient*                      m_httpClient = nullptr;
 };

@@ -4,6 +4,7 @@
 #include "utils/Constants.hpp"
 
 #include <QApplication>
+#include <QFile>
 #include <QIcon>
 #include <QSoundEffect>
 
@@ -59,8 +60,15 @@ void TrayIcon::showAlert(const AlertEvent& event) {
 
     // Play notification sound if enabled
     if (SettingsProvider::instance().notificationSoundEnabled()) {
+        QUrl soundUrl;
+        QString customPath = SettingsProvider::instance().notificationSoundPath();
+        if (!customPath.isEmpty() && QFile::exists(customPath)) {
+            soundUrl = QUrl::fromLocalFile(customPath);
+        } else {
+            soundUrl = QUrl("qrc:/assets/sounds/alert.wav");
+        }
         QSoundEffect* sound = new QSoundEffect(this);
-        sound->setSource(QUrl("qrc:/assets/sounds/alert.wav"));
+        sound->setSource(soundUrl);
         sound->play();
         connect(sound, &QSoundEffect::playingChanged, this, [sound]() {
             if (!sound->isPlaying()) {

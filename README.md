@@ -13,16 +13,20 @@ Built with C++17 and Qt5. Runs on Linux, macOS, and Windows.
 - **Multi-source tracking** -- Monitor prices from Steam, Udemy, Amazon, and user-configured sources
 - **Alert conditions** -- Set price and discount thresholds with AND logic (all conditions must be met)
 - **Check Now** -- On-demand price checking with multi-select support (Ctrl/Shift-click)
-- **Desktop notifications** -- System tray alerts when conditions are triggered
+- **Desktop notifications** -- System tray alerts with configurable notification sounds
+- **Custom notification sounds** -- Browse, test, and set custom `.wav` alert sounds or use the built-in default
 - **Alert history** -- Review and dismiss past alerts
 - **Background polling** -- Per-product check intervals from 30 seconds to 24 hours
+- **Currency support** -- Track prices in multiple currencies with formatted display
 - **Auto-update checker** -- Checks GitHub Releases for new versions on startup and via Help menu
-- **Plugin system** -- Extend with native C++ plugins (.so/.dll) or JSON-configured sources
+- **Plugin system** -- Extend with native C++ plugins (.so/.dll) or JSON-configured sources; IPlugin2 interface supports embedded settings widgets
+- **SVG icon set** -- Consistent Catppuccin-themed icons for toolbar, sources, and status indicators
 - **Dark theme** -- Catppuccin Mocha palette applied by default
 - **System tray** -- Minimizes to tray on close, runs in background
 - **Auto-start** -- Optional launch on system startup (Linux, macOS, Windows)
 - **SQLite persistence** -- Products, conditions, and alert history stored locally with versioned migrations
 - **Internationalization** -- English, Arabic (RTL), and French translations with auto-restart on language change
+- **Code signing** -- Release builds support code signing via `scripts/sign.sh`
 
 ## Quick Start
 
@@ -44,7 +48,7 @@ See [docs/BUILDING.md](docs/BUILDING.md) for prerequisites and platform-specific
 3. **Check Now** -- Select one or more products and click "Check Now" for an immediate price check
 4. **Get notified** -- When alert conditions are met, a tray notification appears and the table row highlights
 5. **Review alerts** -- Open Alert History to see triggered alerts and dismiss them
-6. **Configure** -- Use Settings to enter API credentials (Udemy, Amazon), adjust polling defaults, enable auto-start, and set the plugin directory
+6. **Configure** -- Use Settings to enter API credentials (Udemy, Amazon), adjust polling defaults, notification sounds, enable auto-start, and manage plugins
 
 See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full walkthrough.
 
@@ -64,14 +68,18 @@ See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full walkthrough.
 ```text
 PriceBell/
 ├── include/
-│   ├── core/           # Business logic (PriceChecker, AlertManager, PricePoller, PluginManager)
+│   ├── core/           # Business logic (AppController, PriceChecker, AlertManager, PricePoller, PluginManager, IPlugin2)
 │   ├── handlers/       # Price source handlers (Steam, Udemy, Amazon, Generic)
 │   ├── storage/        # SQLite persistence (Database, ProductRepository, AlertRepository)
 │   ├── gui/            # Qt UI components (MainWindow, ProductDialog, SettingsDialog, TrayIcon)
-│   └── utils/          # Logger, HttpClient, UpdateChecker, AutoStartManager
+│   └── utils/          # Logger, HttpClient, UpdateChecker, AutoStartManager, SettingsProvider, CurrencyUtils, Constants
 ├── src/                # Implementation files (mirrors include/ structure)
-├── tests/              # Test suite (PriceChecker, Repository)
-├── assets/             # Logo, tray icons, dark theme stylesheet
+├── tests/              # Test suite (URL validation, repository, settings, currency, logger)
+├── assets/
+│   ├── icons/          # SVG icon set (toolbar, source, status, tray, app)
+│   ├── sounds/         # Notification sounds (alert.wav)
+│   └── themes/         # QSS stylesheets (dark.qss)
+├── scripts/            # Build & release helpers (sign.sh)
 ├── i18n/               # Translation files (.ts)
 ├── docs/               # Documentation
 └── CMakeLists.txt

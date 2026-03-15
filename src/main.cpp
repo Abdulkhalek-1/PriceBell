@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
         qRegisterMetaType<AlertEvent>("AlertEvent");
         app.setApplicationName("PriceBell");
         app.setOrganizationName("PriceBell");
-        app.setWindowIcon(QIcon(":/assets/logo.svg"));
+        app.setWindowIcon(QIcon(":/assets/icons/app_icon.svg"));
         // Keep running in the background when main window is hidden (tray)
         app.setQuitOnLastWindowClosed(false);
 

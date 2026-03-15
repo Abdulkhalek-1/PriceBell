@@ -33,6 +33,8 @@ public:
     void setLanguage(const QString& lang);
     bool notificationSoundEnabled() const;
     void setNotificationSoundEnabled(bool enabled);
+    QString notificationSoundPath() const;
+    void setNotificationSoundPath(const QString& path);
     bool checkUpdatesOnStartup() const;
     void setCheckUpdatesOnStartup(bool enabled);
 
@@ -53,6 +55,7 @@ private:
     static constexpr const char* kDefaultIntervalKey = "polling/default_interval";
     static constexpr const char* kPluginDirectory    = "plugins/directory";
     static constexpr const char* kLanguage           = "language";
-    static constexpr const char* kNotificationSound  = "notifications/sound_enabled";
-    static constexpr const char* kCheckUpdates       = "updates/check_on_startup";
+    static constexpr const char* kNotificationSound     = "notifications/sound_enabled";
+    static constexpr const char* kNotificationSoundPath = "notifications/sound_path";
+    static constexpr const char* kCheckUpdates          = "updates/check_on_startup";
 };

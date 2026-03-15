@@ -6,6 +6,7 @@
 #include "handlers/AmazonHandler.hpp"
 #include "handlers/GenericWebHandler.hpp"
 #include "storage/Database.hpp"
+#include "utils/HttpClient.hpp"
 #include "utils/Logger.hpp"
 
 #include <QDir>
@@ -16,6 +17,16 @@
 
 PluginManager::PluginManager() {}
 
+HttpClient* PluginManager::ensureHttpClient() {
+    if (!m_httpClient) {
+        // Created lazily so that the QNetworkAccessManager lives on the
+        // calling thread (the poller thread), satisfying Qt's thread-affinity
+        // requirement.
+        m_httpClient = new HttpClient();
+    }
+    return m_httpClient;
+}
+
 PluginManager::~PluginManager() {
     // Clear handlers first so shared_ptr deleters run (which call loader->unload())
     m_handlers.clear();
@@ -25,6 +36,8 @@ PluginManager::~PluginManager() {
         delete loader;
     }
     m_loaders.clear();
+
+    delete m_httpClient;
 }
 
 void PluginManager::registerBuiltins() {
@@ -199,6 +212,10 @@ FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::
             return FetchResult{false, 0, 0, "URL does not match handler's allowed patterns"};
         }
     }
+
+    // Lazily create the HttpClient on the calling thread (poller thread)
+    // and inject it into handlers that were constructed without one.
+    entry.handler->setHttpClient(ensureHttpClient());
 
     return entry.handler->fetchProduct(url);
 }

@@ -27,7 +27,10 @@ std::string UdemyHandler::extractCourseId(const std::string& url) {
 }
 
 bool UdemyHandler::validateUrl(const std::string& url) const {
-    return url.find("https://www.udemy.com/course/") == 0;
+    return url.find("https://www.udemy.com/course/") == 0
+        || url.find("http://www.udemy.com/course/") == 0
+        || url.find("https://udemy.com/course/") == 0
+        || url.find("http://udemy.com/course/") == 0;
 }
 
 FetchResult UdemyHandler::fetchProduct(const std::string& url) {

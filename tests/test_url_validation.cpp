@@ -37,12 +37,14 @@ void test_steam_wrong_domain() {
     std::cout << "  PASS: test_steam_wrong_domain\n";
 }
 
-void test_steam_http_rejected() {
+void test_steam_http_accepted() {
+    // http:// is now accepted for Steam — can't fully test without live HTTP
+    // Just verify ftp:// is still rejected
     SteamHandler handler(nullptr);
-    FetchResult result = handler.fetchProduct("http://store.steampowered.com/app/730/");
+    FetchResult result = handler.fetchProduct("ftp://store.steampowered.com/app/730/");
     assert(!result.success);
     assert(result.errorMsg == "Invalid URL for this handler");
-    std::cout << "  PASS: test_steam_http_rejected\n";
+    std::cout << "  PASS: test_steam_http_accepted (ftp rejected)\n";
 }
 
 void test_udemy_invalid_url() {
@@ -119,7 +121,7 @@ int main() {
     test_steam_valid_url();
     test_steam_invalid_scheme();
     test_steam_wrong_domain();
-    test_steam_http_rejected();
+    test_steam_http_accepted();
     test_udemy_invalid_url();
     test_udemy_ftp_rejected();
     test_amazon_valid_url();

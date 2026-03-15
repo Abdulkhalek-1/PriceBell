@@ -13,6 +13,7 @@ public:
     FetchResult fetchProduct(const std::string& url) override;
     std::string handlerId()   const override { return m_config.id; }
     std::string displayName() const override { return m_config.name; }
+    void setHttpClient(HttpClient* http) override { m_http = http; }
 
 private:
     SourceConfig m_config;
