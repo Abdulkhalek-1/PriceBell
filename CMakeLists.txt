@@ -7,6 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
+
 find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools)
 
 set(TS_FILES
@@ -20,7 +22,14 @@ qt5_add_translation(QM_FILES ${TS_FILES})
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.hpp")
 
-add_executable(PriceBell ${SOURCES} ${HEADERS} assets/resources.qrc ${QM_FILES})
+set(PLATFORM_FLAGS "")
+set(WIN_RESOURCES "")
+if(WIN32)
+    set(PLATFORM_FLAGS WIN32)
+    set(WIN_RESOURCES assets/app.rc)
+endif()
+
+add_executable(PriceBell ${PLATFORM_FLAGS} ${SOURCES} ${HEADERS} assets/resources.qrc ${QM_FILES} ${WIN_RESOURCES})
 
 target_include_directories(PriceBell PRIVATE include)
 
