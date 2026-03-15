@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  linux-appimage:
     runs-on: ubuntu-22.04
 
     steps:
@@ -44,7 +44,6 @@ jobs:
           cp -r build/assets/* AppDir/usr/share/PriceBell/assets/ 2>/dev/null || true
           cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
 
-          # Generate PNG icon for linuxdeploy (it cannot use SVG for AppDir root)
           rsvg-convert -w 256 -h 256 assets/logo.svg -o pricebell.png
 
       - name: Download linuxdeploy
@@ -63,18 +62,98 @@ jobs:
             --output appimage \
             --desktop-file PriceBell.desktop \
             --icon-file pricebell.png
-          mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-x86_64.AppImage
+          mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-linux-x86_64.AppImage
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x86_64
+          path: PriceBell-${{ github.ref_name }}-linux-x86_64.AppImage
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        include:
+          - arch: x64
+            qt_arch: win64_msvc2019_64
+            msvc_arch: x64
+          - arch: x86
+            qt_arch: win32_msvc2019
+            msvc_arch: x86
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          arch: ${{ matrix.qt_arch }}
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Configure and build
+        run: |
+          cmake -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $arch = "${{ matrix.arch }}"
+          $dir = "PriceBell-${tag}-windows-${arch}"
+
+          New-Item -ItemType Directory -Path $dir
+          Copy-Item build/PriceBell.exe $dir/
+          Copy-Item -Recurse build/assets $dir/assets -ErrorAction SilentlyContinue
+          Copy-Item -Recurse build/i18n $dir/i18n -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path "$dir/plugins" -Force
+          Copy-Item LICENSE, README.md $dir/
+
+          # Bundle Qt DLLs
+          windeployqt --release --no-translations --no-opengl-sw "$dir/PriceBell.exe"
+
+          Compress-Archive -Path $dir -DestinationPath "PriceBell-${tag}-windows-${arch}.zip"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: PriceBell-${{ github.ref_name }}-windows-${{ matrix.arch }}.zip
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [linux-appimage, windows]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
 
       - name: Generate changelog
-        id: changelog
         run: |
           PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
           if [ "$PREV_TAG" = "${{ github.ref_name }}" ] || [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
+            git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
           else
-            CHANGELOG=$(git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD")
+            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD" > /tmp/changelog.txt
           fi
-          echo "$CHANGELOG" > /tmp/changelog.txt
 
       - name: Create GitHub Release
         env:
@@ -83,11 +162,11 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "PriceBell ${{ github.ref_name }}" \
             --notes-file /tmp/changelog.txt \
-            PriceBell-${{ github.ref_name }}-x86_64.AppImage
+            artifacts/*
 
   fallback:
     runs-on: ubuntu-22.04
-    needs: release
+    needs: publish
     if: failure()
 
     steps:
