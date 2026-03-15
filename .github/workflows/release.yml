@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake \
+            qtbase5-dev qttools5-dev qttools5-dev-tools \
+            libqt5svg5-dev libqt5sql5-sqlite \
+            libfuse2 file
+
+      - name: Configure and build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+          cmake --build build --parallel $(nproc)
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Prepare AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          mkdir -p AppDir/usr/share/PriceBell/assets
+          mkdir -p AppDir/usr/share/PriceBell/i18n
+          mkdir -p AppDir/usr/share/PriceBell/plugins
+
+          cp build/PriceBell AppDir/usr/bin/
+          cp PriceBell.desktop AppDir/usr/share/applications/
+          cp assets/logo.png AppDir/usr/share/icons/hicolor/256x256/apps/pricebell.png
+          cp -r build/assets/* AppDir/usr/share/PriceBell/assets/ 2>/dev/null || true
+          cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
+
+          cp PriceBell.desktop AppDir/
+          cp assets/logo.png AppDir/pricebell.png
+
+      - name: Download linuxdeploy
+        run: |
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+
+      - name: Build AppImage
+        run: |
+          export QMAKE=$(which qmake)
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --plugin qt \
+            --output appimage \
+            --desktop-file AppDir/PriceBell.desktop \
+            --icon-file AppDir/pricebell.png
+          mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-x86_64.AppImage
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
+          if [ "$PREV_TAG" = "${{ github.ref_name }}" ] || [ -z "$PREV_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" HEAD)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD")
+          fi
+          echo "$CHANGELOG" > /tmp/changelog.txt
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "PriceBell ${{ github.ref_name }}" \
+            --notes-file /tmp/changelog.txt \
+            PriceBell-${{ github.ref_name }}-x86_64.AppImage
+
+  fallback:
+    runs-on: ubuntu-22.04
+    needs: release
+    if: failure()
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake \
+            qtbase5-dev qttools5-dev qttools5-dev-tools \
+            libqt5svg5-dev libqt5sql5-sqlite
+
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel $(nproc)
+
+      - name: Package as tar.gz
+        run: |
+          mkdir -p PriceBell-${{ github.ref_name }}
+          cp build/PriceBell PriceBell-${{ github.ref_name }}/
+          cp -r build/assets PriceBell-${{ github.ref_name }}/ 2>/dev/null || true
+          cp -r build/i18n PriceBell-${{ github.ref_name }}/ 2>/dev/null || true
+          cp LICENSE README.md PriceBell-${{ github.ref_name }}/
+          tar czf PriceBell-${{ github.ref_name }}-linux-x86_64.tar.gz PriceBell-${{ github.ref_name }}
+
+      - name: Generate changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
+          if [ "$PREV_TAG" = "${{ github.ref_name }}" ] || [ -z "$PREV_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
+          else
+            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD" > /tmp/changelog.txt
+          fi
+
+      - name: Create GitHub Release (tar.gz fallback)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "PriceBell ${{ github.ref_name }}" \
+            --notes-file /tmp/changelog.txt \
+            PriceBell-${{ github.ref_name }}-linux-x86_64.tar.gz

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PriceBell
+Comment=Track and compare product prices across online stores
+Exec=PriceBell
+Icon=pricebell
+Categories=Utility;Network;
+Terminal=false
