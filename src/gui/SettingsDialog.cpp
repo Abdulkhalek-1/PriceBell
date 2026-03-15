@@ -33,6 +33,13 @@ void SettingsDialog::setupUi() {
     startupLayout->addWidget(m_autoStartCheck);
     mainLayout->addWidget(startupGroup);
 
+    // ── Updates ─────────────────────────────────────────────────────────────────
+    QGroupBox* updateGroup = new QGroupBox(tr("Updates"), this);
+    QVBoxLayout* updateLayout = new QVBoxLayout(updateGroup);
+    m_autoUpdateCheck = new QCheckBox(tr("Check for updates on startup"), this);
+    updateLayout->addWidget(m_autoUpdateCheck);
+    mainLayout->addWidget(updateGroup);
+
     // ── Udemy ─────────────────────────────────────────────────────────────────
     QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), this);
     QFormLayout* udemyForm = new QFormLayout(udemyGroup);
@@ -113,6 +120,7 @@ void SettingsDialog::loadSettings() {
     if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
 
     m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
+    m_autoUpdateCheck->setChecked(s.value("updates/check_on_startup", true).toBool());
 }
 
 void SettingsDialog::saveSettings() {
@@ -124,14 +132,14 @@ void SettingsDialog::saveSettings() {
     s.setValue("amazon/partner_tag",        m_amazonPartnerTag->text());
     s.setValue("polling/default_interval",  m_defaultInterval->value());
     s.setValue("plugins/directory",         m_pluginDir->text());
+    s.setValue("updates/check_on_startup",  m_autoUpdateCheck->isChecked());
 
     QString newLang = m_languageCombo->currentData().toString();
     QString oldLang = s.value("language", "en").toString();
     s.setValue("language", newLang);
 
     if (newLang != oldLang) {
-        QMessageBox::information(this, tr("Language"),
-            tr("Language change will take effect after restarting PriceBell."));
+        m_restartNeeded = true;
     }
 
     bool wantAutoStart = m_autoStartCheck->isChecked();

@@ -5,6 +5,10 @@
 #include <chrono>
 #include <QMetaType>
 
+// ── Constants ────────────────────────────────────────────────────────────────
+
+static constexpr int RESTART_EXIT_CODE = 1000;
+
 // ── Enumerations ──────────────────────────────────────────────────────────────
 
 enum class ConditionType {

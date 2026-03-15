@@ -10,50 +10,55 @@
 #include "core/DataStructs.hpp"
 
 int main(int argc, char* argv[]) {
-    QApplication app(argc, argv);
+    int exitCode = 0;
 
-    // Register custom types for cross-thread queued signal delivery.
-    // Without these, signals carrying Product/FetchResult/AlertEvent across
-    // the poller thread boundary are silently dropped by Qt.
-    qRegisterMetaType<Product>("Product");
-    qRegisterMetaType<FetchResult>("FetchResult");
-    qRegisterMetaType<AlertEvent>("AlertEvent");
-    app.setApplicationName("PriceBell");
-    app.setOrganizationName("PriceBell");
-    app.setWindowIcon(QIcon(":/assets/logo.svg"));
-    // Keep running in the background when main window is hidden (tray)
-    app.setQuitOnLastWindowClosed(false);
+    do {
+        QApplication app(argc, argv);
 
-    // Load user's language preference
-    QSettings settings("PriceBell", "PriceBell");
-    QString locale = settings.value("language", "en").toString();
+        // Register custom types for cross-thread queued signal delivery.
+        qRegisterMetaType<Product>("Product");
+        qRegisterMetaType<FetchResult>("FetchResult");
+        qRegisterMetaType<AlertEvent>("AlertEvent");
+        app.setApplicationName("PriceBell");
+        app.setOrganizationName("PriceBell");
+        app.setWindowIcon(QIcon(":/assets/logo.svg"));
+        // Keep running in the background when main window is hidden (tray)
+        app.setQuitOnLastWindowClosed(false);
 
-    // Load app translations
-    QTranslator translator;
-    if (translator.load("pricebell_" + locale, QApplication::applicationDirPath() + "/i18n")) {
-        app.installTranslator(&translator);
-    }
+        // Load user's language preference
+        QSettings settings("PriceBell", "PriceBell");
+        QString locale = settings.value("language", "en").toString();
 
-    // Load Qt's own translations (OK, Cancel, etc.)
-    QTranslator qtTranslator;
-    if (qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
-        app.installTranslator(&qtTranslator);
-    }
+        // Load app translations
+        QTranslator translator;
+        if (translator.load("pricebell_" + locale, QApplication::applicationDirPath() + "/i18n")) {
+            app.installTranslator(&translator);
+        }
 
-    // Set RTL layout for Arabic and similar locales
-    if (QLocale(locale).textDirection() == Qt::RightToLeft) {
-        QApplication::setLayoutDirection(Qt::RightToLeft);
-    }
+        // Load Qt's own translations (OK, Cancel, etc.)
+        QTranslator qtTranslator;
+        if (qtTranslator.load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath))) {
+            app.installTranslator(&qtTranslator);
+        }
 
-    if (!Database::open()) {
-        Logger::error("Failed to open database. Exiting.");
-        return 1;
-    }
+        // Set RTL layout for Arabic and similar locales
+        if (QLocale(locale).textDirection() == Qt::RightToLeft) {
+            QApplication::setLayoutDirection(Qt::RightToLeft);
+        } else {
+            QApplication::setLayoutDirection(Qt::LeftToRight);
+        }
 
-    MainWindow window;
-    window.show();
+        if (!Database::open()) {
+            Logger::error("Failed to open database. Exiting.");
+            return 1;
+        }
 
-    int ret = app.exec();
-    Database::close();
-    return ret;
+        MainWindow window;
+        window.show();
+
+        exitCode = app.exec();
+        Database::close();
+    } while (exitCode == RESTART_EXIT_CODE);
+
+    return exitCode;
 }
