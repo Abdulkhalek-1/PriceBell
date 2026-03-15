@@ -37,19 +37,19 @@ jobs:
         run: |
           mkdir -p AppDir/usr/bin
           mkdir -p AppDir/usr/share/applications
-          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          mkdir -p AppDir/usr/share/icons/hicolor/scalable/apps
           mkdir -p AppDir/usr/share/PriceBell/assets
           mkdir -p AppDir/usr/share/PriceBell/i18n
           mkdir -p AppDir/usr/share/PriceBell/plugins
 
           cp build/PriceBell AppDir/usr/bin/
           cp PriceBell.desktop AppDir/usr/share/applications/
-          cp assets/logo.png AppDir/usr/share/icons/hicolor/256x256/apps/pricebell.png
+          cp assets/logo.svg AppDir/usr/share/icons/hicolor/scalable/apps/pricebell.svg
           cp -r build/assets/* AppDir/usr/share/PriceBell/assets/ 2>/dev/null || true
           cp build/i18n/*.qm AppDir/usr/share/PriceBell/i18n/ 2>/dev/null || true
 
           cp PriceBell.desktop AppDir/
-          cp assets/logo.png AppDir/pricebell.png
+          cp assets/logo.svg AppDir/pricebell.svg
 
       - name: Download linuxdeploy
         run: |
@@ -65,7 +65,7 @@ jobs:
             --plugin qt \
             --output appimage \
             --desktop-file AppDir/PriceBell.desktop \
-            --icon-file AppDir/pricebell.png
+            --icon-file AppDir/pricebell.svg
           mv PriceBell-*.AppImage PriceBell-${{ github.ref_name }}-x86_64.AppImage
 
       - name: Generate changelog
