@@ -94,6 +94,9 @@ jobs:
           version: '5.15.2'
           arch: ${{ matrix.qt_arch }}
 
+      - name: Install OpenSSL 1.1
+        run: choco install openssl --version=1.1.1.2100 -y --no-progress
+
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -124,22 +127,14 @@ jobs:
           # Bundle Qt DLLs
           windeployqt --release --no-translations --no-opengl-sw "$dir/PriceBell.exe"
 
-          # Bundle OpenSSL DLLs for TLS/HTTPS support
-          # Windows runners have OpenSSL installed; copy the DLLs
-          $sslPaths = @("C:\Program Files\OpenSSL\bin", "C:\Program Files (x86)\OpenSSL\bin",
-                        "C:\ProgramData\chocolatey\bin")
-          $copied = $false
-          foreach ($p in $sslPaths) {
-              if (Test-Path "$p\libssl*.dll") {
-                  Copy-Item "$p\libssl*.dll" "$dir/" -ErrorAction SilentlyContinue
-                  Copy-Item "$p\libcrypto*.dll" "$dir/" -ErrorAction SilentlyContinue
-                  Write-Host "Copied OpenSSL DLLs from $p"
-                  $copied = $true
-                  break
-              }
-          }
-          if (-not $copied) {
-              Write-Warning "OpenSSL DLLs not found — HTTPS may not work"
+          # Bundle OpenSSL 1.1.x DLLs (required by Qt 5.15 for HTTPS)
+          $sslBin = "C:\Program Files\OpenSSL\bin"
+          if (Test-Path "$sslBin\libssl-1_1*.dll") {
+              Copy-Item "$sslBin\libssl-1_1*.dll" "$dir/"
+              Copy-Item "$sslBin\libcrypto-1_1*.dll" "$dir/"
+              Write-Host "Copied OpenSSL 1.1 DLLs from $sslBin"
+          } else {
+              Write-Warning "OpenSSL 1.1 DLLs not found — HTTPS will not work"
           }
 
           Compress-Archive -Path $dir -DestinationPath "PriceBell-${tag}-windows-${arch}.zip"
