@@ -1,6 +1,1 @@
-#include "gui/Widgets.hpp"
-#include <iostream>
-
-void Button::render() {
-    std::cout << "Rendering button..." << std::endl;
-}
+// Removed: Widgets.cpp was a stub. UI components are implemented in their own files.
