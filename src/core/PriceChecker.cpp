@@ -1,12 +1,15 @@
-#include "core/DataStructs.hpp"
-#include <iostream>
+#include "core/PriceChecker.hpp"
 
-bool isMatch(const Product& product) {
+bool PriceChecker::isMatch(const Product& product) {
     for (const auto& filter : product.filters) {
-        if (filter.type == PriceCondition::Type::PRICE_GREATER_EQUAL &&
-            product.currentPrice < filter.value) return false;
-        if (filter.type == PriceCondition::Type::DISCOUNT_GREATER_EQUAL &&
-            product.discount < filter.value) return false;
+        switch (filter.type) {
+            case ConditionType::PRICE_LESS_EQUAL:
+                if (product.currentPrice > filter.value) return false;
+                break;
+            case ConditionType::DISCOUNT_GREATER_EQUAL:
+                if (product.discount < filter.value) return false;
+                break;
+        }
     }
     return true;
 }
