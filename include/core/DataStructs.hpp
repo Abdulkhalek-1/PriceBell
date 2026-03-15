@@ -4,10 +4,12 @@
 #include <vector>
 #include <chrono>
 #include <QMetaType>
+#include "utils/Constants.hpp"
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-static constexpr int RESTART_EXIT_CODE = 1000;
+// Backward-compat alias — new code should use PriceBell::kRestartExitCode
+static constexpr int RESTART_EXIT_CODE = PriceBell::kRestartExitCode;
 
 // ── Enumerations ──────────────────────────────────────────────────────────────
 
@@ -28,6 +30,28 @@ enum class AlertStatus {
     TRIGGERED,
     DISMISSED
 };
+
+// ── Source-type string conversions ───────────────────────────────────────────
+
+inline std::string sourceTypeToId(SourceType type) {
+    switch (type) {
+        case SourceType::STEAM:   return "steam";
+        case SourceType::UDEMY:   return "udemy";
+        case SourceType::AMAZON:  return "amazon";
+        case SourceType::GENERIC: return "generic";
+        case SourceType::PLUGIN:  return "plugin";
+    }
+    return "generic";
+}
+
+inline SourceType sourceIdToType(const std::string& id) {
+    if (id == "steam")   return SourceType::STEAM;
+    if (id == "udemy")   return SourceType::UDEMY;
+    if (id == "amazon")  return SourceType::AMAZON;
+    if (id == "generic") return SourceType::GENERIC;
+    if (id == "plugin")  return SourceType::PLUGIN;
+    return SourceType::GENERIC;
+}
 
 // ── Core structs ──────────────────────────────────────────────────────────────
 

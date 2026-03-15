@@ -4,9 +4,11 @@
 #include <QSettings>
 #include <QLocale>
 #include <QLibraryInfo>
+#include <QStandardPaths>
 #include "gui/MainWindow.hpp"
 #include "storage/Database.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Constants.hpp"
 #include "core/DataStructs.hpp"
 
 int main(int argc, char* argv[]) {
@@ -24,6 +26,9 @@ int main(int argc, char* argv[]) {
         app.setWindowIcon(QIcon(":/assets/logo.svg"));
         // Keep running in the background when main window is hidden (tray)
         app.setQuitOnLastWindowClosed(false);
+
+        // Initialise file-based logger
+        Logger::init(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString());
 
         // Load user's language preference
         QSettings settings("PriceBell", "PriceBell");
