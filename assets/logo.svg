@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="purpleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <g transform="translate(100, 30) scale(3.12)" filter="url(#purpleGlow)">
+    <path d="M 50 15 A 8 8 0 0 0 42 23 C 25 28 15 50 15 70 L 10 90 L 90 90 L 85 70 C 85 50 75 28 58 23 A 8 8 0 0 0 50 15 Z" 
+          fill="none" stroke="#cba6f7" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"/>
+    <path d="M 40 92 A 10 10 0 0 0 60 92 Z" 
+          fill="none" stroke="#cba6f7" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <line x1="256" y1="318" x2="256" y2="350" stroke="#cba6f7" stroke-width="8" stroke-linecap="round" filter="url(#purpleGlow)"/>
+
+  <g filter="url(#purpleGlow)">
+    <path d="M 256 350 L 296 390 L 296 480 L 216 480 L 216 390 Z" 
+          fill="none" stroke="#cba6f7" stroke-width="12" stroke-linejoin="round"/>
+    <circle cx="256" cy="385" r="5" fill="#cba6f7" />
+    <text x="256" y="455" fill="#cba6f7" font-family="Inter, Nunito, system-ui, sans-serif" font-size="64" font-weight="bold" text-anchor="middle">$</text>
+  </g>
+</svg>
