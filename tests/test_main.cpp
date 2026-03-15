@@ -1,7 +1,2 @@
-#include <iostream>
-
-int main() {
-    std::cout << "Running tests..." << std::endl;
-    // Add test cases here
-    return 0;
-}
+// Replaced by test_price_checker.cpp and test_repository.cpp.
+// This file is intentionally empty.
