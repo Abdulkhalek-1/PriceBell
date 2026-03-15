@@ -1,19 +1,74 @@
-cmake_minimum_required(VERSION 3.10)
-project(PriceBell)
+cmake_minimum_required(VERSION 3.16)
+project(PriceBell VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
-
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools)
 
-include_directories(include)
+set(TS_FILES
+    i18n/pricebell_en.ts
+    i18n/pricebell_ar.ts
+    i18n/pricebell_fr.ts
+)
+qt5_add_translation(QM_FILES ${TS_FILES})
 
+# Collect all sources
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.hpp")
 
-add_executable(PriceBell ${SOURCES} ${HEADERS})
+add_executable(PriceBell ${SOURCES} ${HEADERS} assets/resources.qrc ${QM_FILES})
 
-target_link_libraries(PriceBell Qt5::Widgets)
+target_include_directories(PriceBell PRIVATE include)
+
+target_link_libraries(PriceBell
+    Qt5::Widgets
+    Qt5::Sql
+    Qt5::Network
+    Qt5::Svg
+)
+
+# Create plugins directory next to binary
+add_custom_command(TARGET PriceBell POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:PriceBell>/plugins"
+    COMMENT "Creating plugins directory"
+)
+
+# Copy assets next to binary
+add_custom_command(TARGET PriceBell POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:PriceBell>/assets"
+    COMMENT "Copying assets"
+)
+
+# Copy translation files next to binary
+add_custom_target(copy_translations ALL
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/i18n"
+    COMMAND ${CMAKE_COMMAND} -E copy ${QM_FILES} "${CMAKE_BINARY_DIR}/i18n/"
+    DEPENDS ${QM_FILES}
+    COMMENT "Copying translation files to i18n/"
+)
+
+# ── Tests ──────────────────────────────────────────────────────────────────────
+enable_testing()
+
+set(TEST_COMMON_SOURCES
+    src/core/PriceChecker.cpp
+    src/storage/Database.cpp
+    src/storage/ProductRepository.cpp
+    src/storage/AlertRepository.cpp
+    src/utils/Logger.cpp
+)
+
+file(GLOB TEST_SOURCES "tests/test_price_checker.cpp" "tests/test_repository.cpp")
+foreach(TEST_SRC ${TEST_SOURCES})
+    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
+    add_executable(${TEST_NAME} ${TEST_SRC} ${TEST_COMMON_SOURCES})
+    target_include_directories(${TEST_NAME} PRIVATE include)
+    target_link_libraries(${TEST_NAME} Qt5::Sql Qt5::Network)
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach()
