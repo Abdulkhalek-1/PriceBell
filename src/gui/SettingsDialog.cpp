@@ -1,4 +1,5 @@
 #include "gui/SettingsDialog.hpp"
+#include "utils/AutoStartManager.hpp"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -23,6 +24,14 @@ SettingsDialog::SettingsDialog(QWidget* parent)
 
 void SettingsDialog::setupUi() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
+    mainLayout->setContentsMargins(12, 14, 12, 12);
+
+    // ── Startup ──────────────────────────────────────────────────────────────
+    QGroupBox* startupGroup = new QGroupBox(tr("Startup"), this);
+    QVBoxLayout* startupLayout = new QVBoxLayout(startupGroup);
+    m_autoStartCheck = new QCheckBox(tr("Open on Startup"), this);
+    startupLayout->addWidget(m_autoStartCheck);
+    mainLayout->addWidget(startupGroup);
 
     // ── Udemy ─────────────────────────────────────────────────────────────────
     QGroupBox* udemyGroup = new QGroupBox(tr("Udemy API Credentials"), this);
@@ -102,6 +111,8 @@ void SettingsDialog::loadSettings() {
     QString lang = s.value("language", "en").toString();
     int langIdx = m_languageCombo->findData(lang);
     if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
+
+    m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
 }
 
 void SettingsDialog::saveSettings() {
@@ -121,6 +132,14 @@ void SettingsDialog::saveSettings() {
     if (newLang != oldLang) {
         QMessageBox::information(this, tr("Language"),
             tr("Language change will take effect after restarting PriceBell."));
+    }
+
+    bool wantAutoStart = m_autoStartCheck->isChecked();
+    if (wantAutoStart != AutoStartManager::isEnabled()) {
+        if (!AutoStartManager::setEnabled(wantAutoStart)) {
+            QMessageBox::warning(this, tr("Auto-start"),
+                tr("Failed to update auto-start setting."));
+        }
     }
 
     accept();

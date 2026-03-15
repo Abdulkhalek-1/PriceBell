@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QCheckBox>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QComboBox>
@@ -33,4 +34,6 @@ private:
     // Language
     QComboBox* m_languageCombo;
     QLabel*    m_languageLabel;
+    // Open on Startup
+    QCheckBox* m_autoStartCheck;
 };

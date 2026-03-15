@@ -106,11 +106,12 @@ void MainWindow::applyDarkTheme() {
             QGroupBox {
                 border: 1px solid #313244;
                 border-radius: 6px;
-                margin-top: 12px;
+                margin-top: 16px;
+                padding: 20px 8px 8px 8px;
                 color: #cba6f7;
                 font-weight: bold;
             }
-            QGroupBox::title { subcontrol-origin: margin; left: 10px; }
+            QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 2px 6px; }
             QMenuBar {
                 background-color: #181825;
                 color: #cdd6f4;
