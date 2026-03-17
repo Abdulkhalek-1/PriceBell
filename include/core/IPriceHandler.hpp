@@ -3,6 +3,8 @@
 #include "DataStructs.hpp"
 #include <string>
 
+class HttpClient;
+
 // Strategy interface for all price-fetching implementations.
 // Every built-in handler and developer plugin must implement this.
 class IPriceHandler {
@@ -17,4 +19,7 @@ public:
 
     // Human-readable display name shown in the UI source selector.
     virtual std::string displayName() const = 0;
+
+    // Inject or replace the HttpClient used for network requests.
+    virtual void setHttpClient(HttpClient* http) { (void)http; }
 };

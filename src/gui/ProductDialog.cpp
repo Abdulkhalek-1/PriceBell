@@ -1,4 +1,5 @@
 #include "gui/ProductDialog.hpp"
+#include "utils/CurrencyUtils.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -29,15 +30,19 @@ ProductDialog::ProductDialog(PluginManager* pluginManager, const Product& existi
 void ProductDialog::setupUi(PluginManager* pluginManager) {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
 
-    // ── Basic info ────────────────────────────────────────────────────────────
+    // -- Basic info ---------------------------------------------------------------
     QGroupBox* infoGroup = new QGroupBox(tr("Product Info"), this);
     QFormLayout* infoForm = new QFormLayout(infoGroup);
 
     m_nameEdit = new QLineEdit(this);
+    m_nameEdit->setToolTip(tr("Enter a display name for this product"));
+
     m_urlEdit  = new QLineEdit(this);
     m_urlEdit->setPlaceholderText("https://store.steampowered.com/app/730/...");
+    m_urlEdit->setToolTip(tr("Paste the product URL from the store page"));
 
     m_sourceCombo = new QComboBox(this);
+    m_sourceCombo->setToolTip(tr("Select the price source type"));
     for (const auto& src : pluginManager->availableSources()) {
         m_sourceCombo->addItem(QString::fromStdString(src.name));
         m_sourceIds.append(QString::fromStdString(src.id));
@@ -48,8 +53,9 @@ void ProductDialog::setupUi(PluginManager* pluginManager) {
     infoForm->addRow(tr("Source:"), m_sourceCombo);
     mainLayout->addWidget(infoGroup);
 
-    // ── Filters ───────────────────────────────────────────────────────────────
+    // -- Filters ------------------------------------------------------------------
     QGroupBox* filterGroup = new QGroupBox(tr("Alert Conditions"), this);
+    filterGroup->setToolTip(tr("Alert conditions — ALL must be met to trigger (AND logic)"));
     QVBoxLayout* filterLayout = new QVBoxLayout(filterGroup);
 
     m_filtersList = new QListWidget(this);
@@ -73,29 +79,56 @@ void ProductDialog::setupUi(PluginManager* pluginManager) {
     connect(addFilterBtn,    &QPushButton::clicked, this, &ProductDialog::addFilter);
     connect(removeFilterBtn, &QPushButton::clicked, this, &ProductDialog::removeFilter);
 
-    // ── Interval ──────────────────────────────────────────────────────────────
+    // -- Interval -----------------------------------------------------------------
     QGroupBox* intervalGroup = new QGroupBox(tr("Check Interval"), this);
     QFormLayout* intervalForm = new QFormLayout(intervalGroup);
     m_intervalSpin = new QSpinBox(this);
     m_intervalSpin->setRange(30, 86400);
     m_intervalSpin->setValue(3600);
     m_intervalSpin->setSuffix(tr(" sec"));
+    m_intervalSpin->setToolTip(tr("Set how often to check the price (30s – 24h)"));
     intervalForm->addRow(tr("Interval:"), m_intervalSpin);
     mainLayout->addWidget(intervalGroup);
 
-    // ── Buttons ───────────────────────────────────────────────────────────────
+    // -- Buttons ------------------------------------------------------------------
     QDialogButtonBox* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
     mainLayout->addWidget(buttons);
     connect(buttons, &QDialogButtonBox::accepted, this, [this]() {
-        if (m_nameEdit->text().trimmed().isEmpty()) {
+        // Name validation
+        QString name = m_nameEdit->text().trimmed();
+        if (name.isEmpty()) {
             QMessageBox::warning(this, tr("Validation"), tr("Product name cannot be empty."));
             return;
         }
-        if (m_urlEdit->text().trimmed().isEmpty()) {
+        if (name.length() > 200) {
+            QMessageBox::warning(this, tr("Validation"), tr("Product name is too long (max 200 characters)."));
+            return;
+        }
+
+        // URL validation
+        QString url = m_urlEdit->text().trimmed();
+        if (url.isEmpty()) {
             QMessageBox::warning(this, tr("Validation"), tr("URL cannot be empty."));
             return;
         }
+        if (!url.startsWith("https://") && !url.startsWith("http://")) {
+            QMessageBox::warning(this, tr("Validation"), tr("URL must start with http:// or https://"));
+            return;
+        }
+        if (url.length() > 2048) {
+            QMessageBox::warning(this, tr("Validation"), tr("URL is too long (max 2048 characters)."));
+            return;
+        }
+
+        // Condition validation
+        for (const auto& filter : m_conditions) {
+            if (filter.value <= 0) {
+                QMessageBox::warning(this, tr("Validation"), tr("Condition value must be greater than 0."));
+                return;
+            }
+        }
+
         accept();
     });
     connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -127,7 +160,7 @@ void ProductDialog::populateFrom(const Product& product) {
     m_conditions = product.filters;
     for (const auto& c : m_conditions) {
         QString label = (c.type == ConditionType::PRICE_LESS_EQUAL)
-            ? tr("Price ≤ $%1").arg(c.value, 0, 'f', 2)
+            ? tr("Price ≤ %1").arg(CurrencyUtils::formatPrice(c.value, product.currency))
             : tr("Discount ≥ %1%").arg(static_cast<int>(c.value));
         m_filtersList->addItem(label);
     }

@@ -4,9 +4,12 @@
 #include <QSettings>
 #include <QLocale>
 #include <QLibraryInfo>
+#include <QStandardPaths>
+#include "core/AppController.hpp"
 #include "gui/MainWindow.hpp"
 #include "storage/Database.hpp"
 #include "utils/Logger.hpp"
+#include "utils/Constants.hpp"
 #include "core/DataStructs.hpp"
 
 int main(int argc, char* argv[]) {
@@ -21,9 +24,12 @@ int main(int argc, char* argv[]) {
         qRegisterMetaType<AlertEvent>("AlertEvent");
         app.setApplicationName("PriceBell");
         app.setOrganizationName("PriceBell");
-        app.setWindowIcon(QIcon(":/assets/logo.svg"));
+        app.setWindowIcon(QIcon(":/assets/icons/app_icon.svg"));
         // Keep running in the background when main window is hidden (tray)
         app.setQuitOnLastWindowClosed(false);
+
+        // Initialise file-based logger
+        Logger::init(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString());
 
         // Load user's language preference
         QSettings settings("PriceBell", "PriceBell");
@@ -53,7 +59,10 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        MainWindow window;
+        AppController controller;
+        controller.initialize();
+
+        MainWindow window(&controller);
         window.show();
 
         exitCode = app.exec();

@@ -4,67 +4,82 @@
 <context>
     <name>AlertHistoryDialog</name>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="15"/>
         <source>Alert History</source>
         <translation>Historique des alertes</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="24"/>
         <source>Past Alerts</source>
-        <translation>Alertes passees</translation>
+        <translation>Alertes passées</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="30"/>
         <source>Product</source>
         <translation>Produit</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="30"/>
         <source>Price</source>
         <translation>Prix</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="30"/>
         <source>Discount %</source>
         <translation>Remise %</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="30"/>
         <source>Triggered At</source>
-        <translation>Declenchee le</translation>
+        <translation>Déclenchée le</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="30"/>
         <source>Status</source>
         <translation>Statut</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="38"/>
-        <source>Dismiss Selected</source>
-        <translation>Ignorer la selection</translation>
+        <source>Product that triggered the alert</source>
+        <translation>Produit ayant déclenché l&apos;alerte</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="39"/>
+        <source>Price at the time the alert was triggered</source>
+        <translation>Prix au moment du déclenchement de l&apos;alerte</translation>
+    </message>
+    <message>
+        <source>Discount percentage at trigger time</source>
+        <translation>Pourcentage de remise au moment du déclenchement</translation>
+    </message>
+    <message>
+        <source>Date and time the alert was triggered</source>
+        <translation>Date et heure du déclenchement de l&apos;alerte</translation>
+    </message>
+    <message>
+        <source>Whether the alert is still active or dismissed</source>
+        <translation>Si l&apos;alerte est toujours active ou ignorée</translation>
+    </message>
+    <message>
+        <source>Dismiss Selected</source>
+        <translation>Ignorer la sélection</translation>
+    </message>
+    <message>
+        <source>Mark the selected alert as dismissed</source>
+        <translation>Marquer l&apos;alerte sélectionnée comme ignorée</translation>
+    </message>
+    <message>
         <source>Refresh</source>
         <translation>Actualiser</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="40"/>
+        <source>Reload alert history from database</source>
+        <translation>Recharger l&apos;historique des alertes depuis la base de données</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>Fermer</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="77"/>
-        <source>$%1</source>
-        <translation>%1 $</translation>
+        <source>Close this dialog</source>
+        <translation>Fermer cette fenêtre</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="80"/>
         <source>Dismissed</source>
-        <translation>Ignoree</translation>
+        <translation>Ignorée</translation>
     </message>
     <message>
-        <location filename="../src/gui/AlertHistoryDialog.cpp" line="80"/>
         <source>Active</source>
         <translation>Active</translation>
     </message>
@@ -72,257 +87,252 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="32"/>
-        <location filename="../src/gui/MainWindow.cpp" line="507"/>
         <source>PriceBell</source>
         <translation>PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="147"/>
-        <source>+ Add Product</source>
-        <translation>+ Ajouter un produit</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="148"/>
-        <source>✎ Edit</source>
-        <translation>✎ Modifier</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="149"/>
-        <source>✕ Remove</source>
-        <translation>✕ Supprimer</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="150"/>
-        <source>🔄 Check Now</source>
-        <translation>🔄 Verifier maintenant</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="151"/>
-        <source>🔔 Alert History</source>
-        <translation>🔔 Historique des alertes</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="152"/>
-        <source>⚙ Settings</source>
-        <translation>⚙ Parametres</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="174"/>
-        <source>Name</source>
-        <translation>Nom</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="174"/>
-        <source>Source</source>
-        <translation>Source</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="174"/>
-        <source>Current Price</source>
-        <translation>Prix actuel</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="174"/>
-        <source>Discount %</source>
-        <translation>Remise %</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="175"/>
-        <source>Status</source>
-        <translation>Statut</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="175"/>
-        <source>Last Checked</source>
-        <translation>Derniere verification</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="175"/>
-        <source>Interval (s)</source>
-        <translation>Intervalle (s)</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="188"/>
-        <source>File</source>
-        <translation>Fichier</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="189"/>
         <source>Add Product</source>
         <translation>Ajouter un produit</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="190"/>
-        <source>Edit Product</source>
-        <translation>Modifier le produit</translation>
+        <source>Edit</source>
+        <translation>Modifier</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="191"/>
-        <source>Remove Product</source>
-        <translation>Supprimer le produit</translation>
+        <source>Remove</source>
+        <translation>Supprimer</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="193"/>
-        <source>Restart</source>
-        <translation>Redemarrer</translation>
+        <source>Check Now</source>
+        <translation>Vérifier maintenant</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="194"/>
-        <source>Quit</source>
-        <translation>Quitter</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="196"/>
-        <source>View</source>
-        <translation>Affichage</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="197"/>
         <source>Alert History</source>
         <translation>Historique des alertes</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="199"/>
+        <source>Settings</source>
+        <translation>Paramètres</translation>
+    </message>
+    <message>
+        <source>Add a new product to track</source>
+        <translation>Ajouter un nouveau produit à suivre</translation>
+    </message>
+    <message>
+        <source>Edit selected product</source>
+        <translation>Modifier le produit sélectionné</translation>
+    </message>
+    <message>
+        <source>Remove selected product</source>
+        <translation>Supprimer le produit sélectionné</translation>
+    </message>
+    <message>
+        <source>Check price now</source>
+        <translation>Vérifier le prix maintenant</translation>
+    </message>
+    <message>
+        <source>View alert history</source>
+        <translation>Voir l&apos;historique des alertes</translation>
+    </message>
+    <message>
+        <source>Open settings</source>
+        <translation>Ouvrir les paramètres</translation>
+    </message>
+    <message>
+        <source>Name</source>
+        <translation>Nom</translation>
+    </message>
+    <message>
+        <source>Source</source>
+        <translation>Source</translation>
+    </message>
+    <message>
+        <source>Current Price</source>
+        <translation>Prix actuel</translation>
+    </message>
+    <message>
+        <source>Discount %</source>
+        <translation>Remise %</translation>
+    </message>
+    <message>
+        <source>Status</source>
+        <translation>Statut</translation>
+    </message>
+    <message>
+        <source>Last Checked</source>
+        <translation>Dernière vérification</translation>
+    </message>
+    <message>
+        <source>Conditions</source>
+        <translation>Conditions</translation>
+    </message>
+    <message>
+        <source>Interval (s)</source>
+        <translation>Intervalle (s)</translation>
+    </message>
+    <message>
+        <source>Product name</source>
+        <translation>Nom du produit</translation>
+    </message>
+    <message>
+        <source>Price source</source>
+        <translation>Source du prix</translation>
+    </message>
+    <message>
+        <source>Current tracked price</source>
+        <translation>Prix suivi actuel</translation>
+    </message>
+    <message>
+        <source>Current discount percentage</source>
+        <translation>Pourcentage de remise actuel</translation>
+    </message>
+    <message>
+        <source>Monitoring status</source>
+        <translation>Statut de surveillance</translation>
+    </message>
+    <message>
+        <source>Last time price was checked</source>
+        <translation>Dernière vérification du prix</translation>
+    </message>
+    <message>
+        <source>Alert conditions for this product</source>
+        <translation>Conditions d&apos;alerte pour ce produit</translation>
+    </message>
+    <message>
+        <source>How often price is checked (seconds)</source>
+        <translation>Fréquence de vérification du prix (secondes)</translation>
+    </message>
+    <message>
+        <source>File</source>
+        <translation>Fichier</translation>
+    </message>
+    <message>
+        <source>Edit Product</source>
+        <translation>Modifier le produit</translation>
+    </message>
+    <message>
+        <source>Remove Product</source>
+        <translation>Supprimer le produit</translation>
+    </message>
+    <message>
+        <source>Restart</source>
+        <translation>Redémarrer</translation>
+    </message>
+    <message>
+        <source>Quit</source>
+        <translation>Quitter</translation>
+    </message>
+    <message>
+        <source>View</source>
+        <translation>Affichage</translation>
+    </message>
+    <message>
         <source>Tools</source>
         <translation>Outils</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="200"/>
-        <source>Check Now</source>
-        <translation>Verifier maintenant</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="201"/>
-        <source>Settings</source>
-        <translation>Parametres</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="203"/>
         <source>Help</source>
         <translation>Aide</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="204"/>
         <source>Check for Updates</source>
-        <translation>Rechercher des mises a jour</translation>
+        <translation>Rechercher des mises à jour</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="206"/>
         <source>About</source>
-        <translation>A propos</translation>
+        <translation>À propos</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="207"/>
         <source>About PriceBell</source>
-        <translation>A propos de PriceBell</translation>
+        <translation>À propos de PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="208"/>
         <source>PriceBell %1
 A price tracking application.</source>
         <translation>PriceBell %1
 Application de suivi des prix.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="270"/>
         <source>Steam</source>
         <translation>Steam</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="271"/>
         <source>Udemy</source>
         <translation>Udemy</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="272"/>
         <source>Amazon</source>
         <translation>Amazon</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="274"/>
         <source>Generic</source>
-        <translation>Generique</translation>
+        <translation>Générique</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="278"/>
         <source>Never</source>
         <translation>Jamais</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="283"/>
-        <location filename="../src/gui/MainWindow.cpp" line="486"/>
-        <source>$%1</source>
-        <translation>%1 $</translation>
+        <source>Price &lt;= %1</source>
+        <translation>Prix &lt;= %1</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="285"/>
-        <location filename="../src/gui/MainWindow.cpp" line="417"/>
+        <source>Discount &gt;= %1%</source>
+        <translation>Remise &gt;= %1%</translation>
+    </message>
+    <message>
         <source>Watching</source>
         <translation>Surveillance</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="285"/>
-        <location filename="../src/gui/MainWindow.cpp" line="417"/>
         <source>Paused</source>
         <translation>En pause</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="300"/>
-        <location filename="../src/gui/MainWindow.cpp" line="325"/>
-        <location filename="../src/gui/MainWindow.cpp" line="411"/>
         <source>Error</source>
         <translation>Erreur</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="300"/>
         <source>Failed to save product to database.</source>
-        <translation>Impossible d&apos;enregistrer le produit dans la base de donnees.</translation>
+        <translation>Impossible d&apos;enregistrer le produit dans la base de données.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="311"/>
-        <location filename="../src/gui/MainWindow.cpp" line="336"/>
         <source>No Selection</source>
-        <translation>Aucune selection</translation>
+        <translation>Aucune sélection</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="311"/>
         <source>Please select a product to edit.</source>
-        <translation>Veuillez selectionner un produit a modifier.</translation>
+        <translation>Veuillez sélectionner un produit à modifier.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="325"/>
         <source>Failed to update product.</source>
-        <translation>Impossible de mettre a jour le produit.</translation>
+        <translation>Impossible de mettre à jour le produit.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="336"/>
         <source>Please select a product to remove.</source>
-        <translation>Veuillez selectionner un produit a supprimer.</translation>
+        <translation>Veuillez sélectionner un produit à supprimer.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="342"/>
         <source>Confirm</source>
         <translation>Confirmer</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="343"/>
         <source>Remove &quot;%1&quot;? This will also delete its alert history.</source>
-        <translation>Supprimer &quot;%1&quot; ? L&apos;historique des alertes sera egalement supprime.</translation>
+        <translation>Supprimer « %1 » ? L&apos;historique des alertes sera également supprimé.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="398"/>
         <source>Checking...</source>
-        <translation>Verification...</translation>
+        <translation>Vérification...</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="436"/>
-        <location filename="../src/gui/MainWindow.cpp" line="446"/>
+        <source>Alert!</source>
+        <translation>Alerte !</translation>
+    </message>
+    <message>
         <source>Update Available</source>
-        <translation>Mise a jour disponible</translation>
+        <translation>Mise à jour disponible</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="437"/>
         <source>A new version of PriceBell (%1) is available.
 
 Would you like to open the release page?</source>
@@ -331,303 +341,412 @@ Would you like to open the release page?</source>
 Voulez-vous ouvrir la page de publication ?</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="447"/>
         <source>PriceBell %1 is available.</source>
         <translation>PriceBell %1 est disponible.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="455"/>
         <source>Updates</source>
-        <translation>Mises a jour</translation>
+        <translation>Mises à jour</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="456"/>
         <source>You are running the latest version of PriceBell.</source>
-        <translation>Vous utilisez la derniere version de PriceBell.</translation>
+        <translation>Vous utilisez la dernière version de PriceBell.</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="463"/>
         <source>Update Check Failed</source>
-        <translation>Echec de la verification des mises a jour</translation>
+        <translation>Échec de la vérification des mises à jour</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="464"/>
         <source>Could not check for updates: %1</source>
-        <translation>Impossible de verifier les mises a jour : %1</translation>
+        <translation>Impossible de vérifier les mises à jour : %1</translation>
     </message>
     <message>
-        <location filename="../src/gui/MainWindow.cpp" line="476"/>
-        <source>🔔 Alert!</source>
-        <translation>🔔 Alerte !</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/MainWindow.cpp" line="508"/>
         <source>PriceBell is still running in the background.</source>
-        <translation>PriceBell fonctionne toujours en arriere-plan.</translation>
+        <translation>PriceBell fonctionne toujours en arrière-plan.</translation>
     </message>
 </context>
 <context>
     <name>ProductDialog</name>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="15"/>
         <source>Add Product</source>
         <translation>Ajouter un produit</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="23"/>
         <source>Edit Product</source>
         <translation>Modifier le produit</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="33"/>
         <source>Product Info</source>
         <translation>Informations sur le produit</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="46"/>
+        <source>Enter a display name for this product</source>
+        <translation>Entrez un nom d&apos;affichage pour ce produit</translation>
+    </message>
+    <message>
+        <source>Paste the product URL from the store page</source>
+        <translation>Collez l&apos;URL du produit depuis la page du magasin</translation>
+    </message>
+    <message>
+        <source>Select the price source type</source>
+        <translation>Sélectionnez le type de source de prix</translation>
+    </message>
+    <message>
         <source>Name:</source>
         <translation>Nom :</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="47"/>
         <source>URL:</source>
         <translation>URL :</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="48"/>
         <source>Source:</source>
         <translation>Source :</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="52"/>
         <source>Alert Conditions</source>
         <translation>Conditions d&apos;alerte</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="60"/>
+        <source>Alert conditions — ALL must be met to trigger (AND logic)</source>
+        <translation>Conditions d&apos;alerte — TOUTES doivent être remplies pour déclencher (logique ET)</translation>
+    </message>
+    <message>
         <source>Price ≤</source>
         <translation>Prix ≤</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="60"/>
         <source>Discount ≥</source>
         <translation>Remise ≥</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="64"/>
         <source>+ Add</source>
         <translation>+ Ajouter</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="65"/>
         <source>Remove</source>
         <translation>Supprimer</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="77"/>
         <source>Check Interval</source>
-        <translation>Intervalle de verification</translation>
+        <translation>Intervalle de vérification</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="82"/>
         <source> sec</source>
         <translation> sec</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="83"/>
+        <source>Set how often to check the price (30s – 24h)</source>
+        <translation>Définir la fréquence de vérification du prix (30s – 24h)</translation>
+    </message>
+    <message>
         <source>Interval:</source>
         <translation>Intervalle :</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="92"/>
-        <location filename="../src/gui/ProductDialog.cpp" line="96"/>
         <source>Validation</source>
         <translation>Validation</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="92"/>
         <source>Product name cannot be empty.</source>
-        <translation>Le nom du produit ne peut pas etre vide.</translation>
+        <translation>Le nom du produit ne peut pas être vide.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="96"/>
+        <source>Product name is too long (max 200 characters).</source>
+        <translation>Le nom du produit est trop long (max 200 caractères).</translation>
+    </message>
+    <message>
         <source>URL cannot be empty.</source>
-        <translation>L&apos;URL ne peut pas etre vide.</translation>
+        <translation>L&apos;URL ne peut pas être vide.</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="130"/>
-        <location filename="../src/gui/ProductDialog.cpp" line="145"/>
-        <source>Price ≤ $%1</source>
-        <translation>Prix ≤ %1 $</translation>
+        <source>URL must start with http:// or https://</source>
+        <translation>L&apos;URL doit commencer par http:// ou https://</translation>
     </message>
     <message>
-        <location filename="../src/gui/ProductDialog.cpp" line="131"/>
-        <location filename="../src/gui/ProductDialog.cpp" line="146"/>
+        <source>URL is too long (max 2048 characters).</source>
+        <translation>L&apos;URL est trop longue (max 2048 caractères).</translation>
+    </message>
+    <message>
+        <source>Condition value must be greater than 0.</source>
+        <translation>La valeur de la condition doit être supérieure à 0.</translation>
+    </message>
+    <message>
+        <source>Price ≤ %1</source>
+        <translation>Prix ≤ %1</translation>
+    </message>
+    <message>
         <source>Discount ≥ %1%</source>
         <translation>Remise ≥ %1%</translation>
+    </message>
+    <message>
+        <source>Price ≤ $%1</source>
+        <translation>Prix ≤ %1 $</translation>
     </message>
 </context>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="19"/>
         <source>Settings</source>
-        <translation>Parametres</translation>
+        <translation>Paramètres</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="30"/>
+        <source>General</source>
+        <translation>Général</translation>
+    </message>
+    <message>
+        <source>API Keys</source>
+        <translation>Clés API</translation>
+    </message>
+    <message>
+        <source>Plugins</source>
+        <translation>Plugins</translation>
+    </message>
+    <message>
         <source>Startup</source>
-        <translation>Demarrage</translation>
+        <translation>Démarrage</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="32"/>
         <source>Open on Startup</source>
-        <translation>Ouvrir au demarrage</translation>
+        <translation>Ouvrir au démarrage</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="37"/>
+        <source>Automatically launch PriceBell when you log in</source>
+        <translation>Lancer automatiquement PriceBell à la connexion</translation>
+    </message>
+    <message>
         <source>Updates</source>
-        <translation>Mises a jour</translation>
+        <translation>Mises à jour</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="39"/>
         <source>Check for updates on startup</source>
-        <translation>Rechercher des mises a jour au demarrage</translation>
+        <translation>Rechercher des mises à jour au démarrage</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="44"/>
-        <source>Udemy API Credentials</source>
-        <translation>Identifiants API Udemy</translation>
+        <source>Automatically check for new versions when the app starts</source>
+        <translation>Vérifier automatiquement les nouvelles versions au démarrage de l&apos;application</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="49"/>
-        <source>Client ID:</source>
-        <translation>ID client :</translation>
+        <source>Notifications</source>
+        <translation>Notifications</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="50"/>
-        <source>Client Secret:</source>
-        <translation>Secret client :</translation>
+        <source>Play notification sound</source>
+        <translation>Jouer le son de notification</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="54"/>
-        <source>Amazon PA API Credentials</source>
-        <translation>Identifiants Amazon PA API</translation>
+        <source>Play a sound when a price alert is triggered</source>
+        <translation>Jouer un son lorsqu&apos;une alerte de prix est déclenchée</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="60"/>
-        <source>Access Key:</source>
-        <translation>Cle d&apos;acces :</translation>
+        <source>Default (built-in bell)</source>
+        <translation>Par défaut (sonnerie intégrée)</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="61"/>
-        <source>Secret Key:</source>
-        <translation>Cle secrete :</translation>
+        <source>Path to a .wav file, or leave empty for built-in sound</source>
+        <translation>Chemin vers un fichier .wav, ou laisser vide pour le son intégré</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="62"/>
-        <source>Partner Tag:</source>
-        <translation>Tag partenaire :</translation>
+        <source>Browse</source>
+        <translation>Parcourir</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="66"/>
+        <source>Test</source>
+        <translation>Tester</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>Réinitialiser</translation>
+    </message>
+    <message>
+        <source>Choose a .wav sound file</source>
+        <translation>Choisir un fichier son .wav</translation>
+    </message>
+    <message>
+        <source>Play the selected notification sound</source>
+        <translation>Jouer le son de notification sélectionné</translation>
+    </message>
+    <message>
+        <source>Reset to default built-in sound</source>
+        <translation>Réinitialiser au son intégré par défaut</translation>
+    </message>
+    <message>
+        <source>Select Sound File</source>
+        <translation>Sélectionner un fichier son</translation>
+    </message>
+    <message>
+        <source>WAV files (*.wav)</source>
+        <translation>Fichiers WAV (*.wav)</translation>
+    </message>
+    <message>
+        <source>Sound Error</source>
+        <translation>Erreur de son</translation>
+    </message>
+    <message>
+        <source>File not found: %1</source>
+        <translation>Fichier introuvable : %1</translation>
+    </message>
+    <message>
+        <source>Only .wav files are supported.</source>
+        <translation>Seuls les fichiers .wav sont pris en charge.</translation>
+    </message>
+    <message>
+        <source>Sound file not found: %1</source>
+        <translation>Fichier son introuvable : %1</translation>
+    </message>
+    <message>
         <source>Polling</source>
         <translation>Interrogation</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="70"/>
         <source> sec</source>
         <translation> sec</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="72"/>
+        <source>Default interval for new products (30s – 24h)</source>
+        <translation>Intervalle par défaut pour les nouveaux produits (30s – 24h)</translation>
+    </message>
+    <message>
         <source>Default Check Interval:</source>
-        <translation>Intervalle par defaut :</translation>
+        <translation>Intervalle par défaut :</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="76"/>
-        <source>Plugin Directory</source>
-        <translation>Repertoire des plugins</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="79"/>
-        <source>Browse…</source>
-        <translation>Parcourir…</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="84"/>
-        <source>Select Plugin Directory</source>
-        <translation>Selectionner le repertoire des plugins</translation>
-    </message>
-    <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="89"/>
         <source>Language</source>
         <translation>Langue</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="96"/>
+        <source>Application display language (requires restart)</source>
+        <translation>Langue d&apos;affichage de l&apos;application (nécessite un redémarrage)</translation>
+    </message>
+    <message>
         <source>Language:</source>
         <translation>Langue :</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="148"/>
+        <source>Udemy API Credentials</source>
+        <translation>Identifiants API Udemy</translation>
+    </message>
+    <message>
+        <source>Required for Udemy price tracking</source>
+        <translation>Requis pour le suivi des prix Udemy</translation>
+    </message>
+    <message>
+        <source>Client ID:</source>
+        <translation>ID client :</translation>
+    </message>
+    <message>
+        <source>Client Secret:</source>
+        <translation>Secret client :</translation>
+    </message>
+    <message>
+        <source>Amazon PA API Credentials</source>
+        <translation>Identifiants Amazon PA API</translation>
+    </message>
+    <message>
+        <source>Required for Amazon price tracking</source>
+        <translation>Requis pour le suivi des prix Amazon</translation>
+    </message>
+    <message>
+        <source>Access Key:</source>
+        <translation>Clé d&apos;accès :</translation>
+    </message>
+    <message>
+        <source>Secret Key:</source>
+        <translation>Clé secrète :</translation>
+    </message>
+    <message>
+        <source>Partner Tag:</source>
+        <translation>Tag partenaire :</translation>
+    </message>
+    <message>
+        <source>Plugin Directory</source>
+        <translation>Répertoire des plugins</translation>
+    </message>
+    <message>
+        <source>plugins/</source>
+        <translation>plugins/</translation>
+    </message>
+    <message>
+        <source>Directory to scan for native price handler plugins</source>
+        <translation>Répertoire à analyser pour les plugins de gestion des prix</translation>
+    </message>
+    <message>
+        <source>Choose plugin directory</source>
+        <translation>Choisir le répertoire des plugins</translation>
+    </message>
+    <message>
+        <source>Select Plugin Directory</source>
+        <translation>Sélectionner le répertoire des plugins</translation>
+    </message>
+    <message>
+        <source>Registered Handlers</source>
+        <translation>Gestionnaires enregistrés</translation>
+    </message>
+    <message>
+        <source>No handler information available</source>
+        <translation>Aucune information de gestionnaire disponible</translation>
+    </message>
+    <message>
+        <source>No handlers registered</source>
+        <translation>Aucun gestionnaire enregistré</translation>
+    </message>
+    <message>
+        <source>Plugin</source>
+        <translation>Plugin</translation>
+    </message>
+    <message>
+        <source>Built-in</source>
+        <translation>Intégré</translation>
+    </message>
+    <message>
+        <source>%1 built-in, %2 plugin(s)</source>
+        <translation>%1 intégré(s), %2 plugin(s)</translation>
+    </message>
+    <message>
         <source>Auto-start</source>
-        <translation>Demarrage automatique</translation>
+        <translation>Démarrage automatique</translation>
     </message>
     <message>
-        <location filename="../src/gui/SettingsDialog.cpp" line="149"/>
         <source>Failed to update auto-start setting.</source>
-        <translation>Impossible de mettre a jour le demarrage automatique.</translation>
-    </message>
-    <message>
-        <source>Language change will take effect after restarting PriceBell.</source>
-        <translation type="vanished">Le changement de langue prendra effet apres le redemarrage de PriceBell.</translation>
+        <translation>Impossible de mettre à jour le démarrage automatique.</translation>
     </message>
 </context>
 <context>
     <name>TrayIcon</name>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="8"/>
         <source>PriceBell</source>
         <translation>PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="16"/>
         <source>Show PriceBell</source>
         <translation>Afficher PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="21"/>
         <source>Mute Notifications</source>
         <translation>Couper les notifications</translation>
     </message>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="30"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="44"/>
         <source>PriceBell Alert</source>
         <translation>Alerte PriceBell</translation>
     </message>
     <message>
-        <location filename="../src/gui/TrayIcon.cpp" line="45"/>
-        <source>%1 — $%2 (%3% off)</source>
-        <translation>%1 — %2 $ (%3% de remise)</translation>
+        <source>%1 — %2 (%3% off)</source>
+        <translation>%1 — %2 (%3% de remise)</translation>
     </message>
 </context>
 <context>
     <name>UpdateChecker</name>
     <message>
-        <location filename="../src/utils/UpdateChecker.cpp" line="29"/>
         <source>Invalid response from server.</source>
-        <translation>Reponse invalide du serveur.</translation>
+        <translation>Réponse invalide du serveur.</translation>
     </message>
     <message>
-        <location filename="../src/utils/UpdateChecker.cpp" line="38"/>
         <source>No release information found.</source>
-        <translation>Aucune information de version trouvee.</translation>
+        <translation>Aucune information de version trouvée.</translation>
     </message>
 </context>
 </TS>

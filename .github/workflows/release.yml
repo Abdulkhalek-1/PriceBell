@@ -27,6 +27,7 @@ jobs:
             build-essential cmake \
             qtbase5-dev qttools5-dev qttools5-dev-tools \
             libqt5svg5-dev libqt5sql5-sqlite \
+            qtmultimedia5-dev \
             libfuse2 file librsvg2-bin
 
       - name: Configure and build
@@ -65,11 +66,21 @@ jobs:
             --icon-file pricebell.png
           mv PriceBell-*.AppImage PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
 
+      - name: GPG sign AppImage
+        if: env.GPG_PRIVATE_KEY != ''
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --detach-sign --armor PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-x86_64
-          path: PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
+          path: |
+            PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage
+            PriceBell-${{ env.VERSION }}-linux-x86_64.AppImage.asc
 
   windows:
     runs-on: windows-latest
@@ -139,6 +150,20 @@ jobs:
 
           Compress-Archive -Path $dir -DestinationPath "PriceBell-${tag}-windows-${arch}.zip"
 
+      - name: Sign Windows executable
+        if: env.WINDOWS_CERT_BASE64 != ''
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        shell: pwsh
+        run: |
+          $certBytes = [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64)
+          [IO.File]::WriteAllBytes("cert.pfx", $certBytes)
+          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign `
+            /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com `
+            /td sha256 /fd sha256 build\Release\PriceBell.exe
+          Remove-Item cert.pfx
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -195,7 +220,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake \
             qtbase5-dev qttools5-dev qttools5-dev-tools \
-            libqt5svg5-dev libqt5sql5-sqlite
+            libqt5svg5-dev libqt5sql5-sqlite \
+            qtmultimedia5-dev
 
       - name: Build
         run: |

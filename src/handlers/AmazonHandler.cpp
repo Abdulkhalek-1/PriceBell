@@ -1,15 +1,11 @@
 #include "handlers/AmazonHandler.hpp"
 #include "utils/Logger.hpp"
+#include "utils/SettingsProvider.hpp"
 
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QUrl>
-#include <QEventLoop>
-#include <QSettings>
 #include <QDateTime>
 #include <QCryptographicHash>
 #include <QMessageAuthenticationCode>
@@ -21,6 +17,10 @@ static const char* kAmazonApiUrl  = "https://webservices.amazon.com/paapi5/getit
 static const char* kAmazonRegion  = "us-east-1";
 static const char* kAmazonService = "ProductAdvertisingAPI";
 
+AmazonHandler::AmazonHandler(HttpClient* http)
+    : m_http(http)
+{}
+
 std::string AmazonHandler::extractAsin(const std::string& url) {
     // Match /dp/XXXXXXXXXX or /gp/product/XXXXXXXXXX
     std::regex re(R"(/(?:dp|gp/product)/([A-Z0-9]{10}))");
@@ -30,28 +30,14 @@ std::string AmazonHandler::extractAsin(const std::string& url) {
     return {};
 }
 
-FetchResult AmazonHandler::fetchProduct(const std::string& url) {
-    FetchResult result;
+bool AmazonHandler::validateUrl(const std::string& url) const {
+    QUrl qurl(QString::fromStdString(url));
+    QString host = qurl.host();
+    return qurl.scheme() == "https" &&
+           (host.startsWith("www.amazon.") || host.startsWith("amazon."));
+}
 
-    std::string asin = extractAsin(url);
-    if (asin.empty()) {
-        result.errorMsg = "Could not extract ASIN from Amazon URL: " + url;
-        Logger::warn(result.errorMsg);
-        return result;
-    }
-
-    QSettings settings("PriceBell", "PriceBell");
-    QString accessKey   = settings.value("amazon/access_key").toString();
-    QString secretKey   = settings.value("amazon/secret_key").toString();
-    QString partnerTag  = settings.value("amazon/partner_tag").toString();
-
-    if (accessKey.isEmpty() || secretKey.isEmpty() || partnerTag.isEmpty()) {
-        result.errorMsg = "Amazon PA API credentials not configured. Set them in Settings.";
-        Logger::warn(result.errorMsg);
-        return result;
-    }
-
-    // Build the JSON payload for GetItems
+QByteArray AmazonHandler::buildPayload(const std::string& asin, const QString& partnerTag) {
     QString payload = QString(R"({
         "ItemIds": ["%1"],
         "Resources": ["Offers.Listings.Price", "Offers.Listings.SavingBasis"],
@@ -59,8 +45,12 @@ FetchResult AmazonHandler::fetchProduct(const std::string& url) {
         "PartnerType": "Associates",
         "Marketplace": "www.amazon.com"
     })").arg(QString::fromStdString(asin)).arg(partnerTag);
+    return payload.toUtf8();
+}
 
-    // AWS Signature V4
+QMap<QString, QString> AmazonHandler::signRequest(const QByteArray& payload,
+                                                    const QString& accessKey,
+                                                    const QString& secretKey) {
     QString dateTime  = QDateTime::currentDateTimeUtc().toString("yyyyMMddTHHmmssZ");
     QString datestamp = dateTime.left(8);
     QString host      = "webservices.amazon.com";
@@ -75,7 +65,7 @@ FetchResult AmazonHandler::fetchProduct(const std::string& url) {
     QString signedHeaders = "content-encoding;content-type;host;x-amz-date;x-amz-target";
 
     QByteArray payloadHash = QCryptographicHash::hash(
-        payload.toUtf8(), QCryptographicHash::Sha256).toHex();
+        payload, QCryptographicHash::Sha256).toHex();
 
     QString canonicalRequest = QString("POST\n/paapi5/getitems\n\n%1\n%2\n%3")
         .arg(canonicalHeaders, signedHeaders, QString(payloadHash));
@@ -101,30 +91,24 @@ FetchResult AmazonHandler::fetchProduct(const std::string& url) {
                                  "SignedHeaders=%3, Signature=%4")
         .arg(accessKey, credentialScope, signedHeaders, signature);
 
-    QNetworkAccessManager mgr;
-    QUrl _url(kAmazonApiUrl); QNetworkRequest request{_url};
-    request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json; charset=utf-8");
-    request.setRawHeader("content-encoding",  "amz-1.0");
-    request.setRawHeader("host",              host.toUtf8());
-    request.setRawHeader("x-amz-date",        dateTime.toUtf8());
-    request.setRawHeader("x-amz-target",      target.toUtf8());
-    request.setRawHeader("Authorization",     authHeader.toUtf8());
-    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell/2.0");
+    QMap<QString, QString> headers;
+    headers["content-encoding"] = "amz-1.0";
+    headers["host"]             = host;
+    headers["x-amz-date"]       = dateTime;
+    headers["x-amz-target"]     = target;
+    headers["Authorization"]    = authHeader;
+    return headers;
+}
 
-    QEventLoop loop;
-    QNetworkReply* reply = mgr.post(request, payload.toUtf8());
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-    loop.exec();
+FetchResult AmazonHandler::parseResponse(const QByteArray& data, const std::string& asin) {
+    FetchResult result;
 
-    if (reply->error() != QNetworkReply::NoError) {
-        result.errorMsg = reply->errorString().toStdString();
-        Logger::error("Amazon fetch error: " + result.errorMsg);
-        reply->deleteLater();
+    QJsonDocument doc = QJsonDocument::fromJson(data);
+    if (doc.isNull()) {
+        result.errorMsg = "Invalid JSON response from Amazon API";
+        Logger::error(result.errorMsg);
         return result;
     }
-
-    QJsonDocument doc  = QJsonDocument::fromJson(reply->readAll());
-    reply->deleteLater();
 
     // Response: ItemsResult.Items[0].Offers.Listings[0].Price.Amount
     QJsonObject itemsResult = doc.object()
@@ -159,4 +143,41 @@ FetchResult AmazonHandler::fetchProduct(const std::string& url) {
     Logger::info("Amazon: ASIN=" + asin +
                  " price=$" + std::to_string(result.price));
     return result;
+}
+
+FetchResult AmazonHandler::fetchProduct(const std::string& url) {
+    if (!validateUrl(url)) {
+        return FetchResult{false, 0.0f, 0.0f, "Invalid URL for this handler"};
+    }
+
+    FetchResult result;
+
+    std::string asin = extractAsin(url);
+    if (asin.empty()) {
+        result.errorMsg = "Could not extract ASIN from Amazon URL: " + url;
+        Logger::warn(result.errorMsg);
+        return result;
+    }
+
+    QString accessKey  = SettingsProvider::instance().amazonAccessKey();
+    QString secretKey  = SettingsProvider::instance().amazonSecretKey();
+    QString partnerTag = SettingsProvider::instance().amazonPartnerTag();
+
+    if (accessKey.isEmpty() || secretKey.isEmpty() || partnerTag.isEmpty()) {
+        result.errorMsg = "Amazon PA API credentials not configured. Set them in Settings.";
+        Logger::warn(result.errorMsg);
+        return result;
+    }
+
+    QByteArray payload = buildPayload(asin, partnerTag);
+    QMap<QString, QString> headers = signRequest(payload, accessKey, secretKey);
+
+    auto resp = m_http->postSync(QUrl(kAmazonApiUrl), payload, headers);
+    if (!resp.ok) {
+        result.errorMsg = resp.error.toStdString();
+        Logger::error("Amazon fetch error: " + result.errorMsg);
+        return result;
+    }
+
+    return parseResponse(resp.body, asin);
 }

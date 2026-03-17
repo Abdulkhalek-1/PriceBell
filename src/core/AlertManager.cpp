@@ -27,7 +27,9 @@ void AlertManager::onPriceUpdated(Product product, FetchResult result) {
     event.triggeredAt       = std::chrono::system_clock::now();
     event.status            = AlertStatus::TRIGGERED;
 
-    AlertRepository::save(event);
+    if (!AlertRepository::save(event)) {
+        Logger::warn("Failed to save alert event for product: " + event.productName);
+    }
 
     Logger::info("Alert triggered: " + product.name +
                  " @ $" + std::to_string(result.price));

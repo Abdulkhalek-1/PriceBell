@@ -6,11 +6,15 @@
 #include <QSpinBox>
 #include <QComboBox>
 #include <QLabel>
+#include <QTabWidget>
+
+class PluginManager;
 
 class SettingsDialog : public QDialog {
     Q_OBJECT
 public:
-    explicit SettingsDialog(QWidget* parent = nullptr);
+    explicit SettingsDialog(QWidget* parent = nullptr,
+                            PluginManager* pluginManager = nullptr);
     bool isRestartNeeded() const { return m_restartNeeded; }
 
 private slots:
@@ -18,9 +22,16 @@ private slots:
 
 private:
     void setupUi();
+    QWidget* createGeneralTab();
+    QWidget* createApiKeysTab();
+    QWidget* createPluginsTab();
     void loadSettings();
 
+    PluginManager* m_pluginManager = nullptr;
+
     bool m_restartNeeded = false;
+
+    QTabWidget* m_tabWidget;
 
     // Steam (no credentials needed — public API)
     // Udemy
@@ -41,4 +52,7 @@ private:
     QCheckBox* m_autoStartCheck;
     // Updates
     QCheckBox* m_autoUpdateCheck;
+    // Notification sound
+    QCheckBox* m_notificationSoundCheck;
+    QLineEdit* m_soundPathEdit;
 };

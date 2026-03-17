@@ -1,32 +1,59 @@
 #include "core/PluginManager.hpp"
 #include "core/IPlugin.hpp"
+#include "core/IPlugin2.hpp"
 #include "handlers/SteamHandler.hpp"
 #include "handlers/UdemyHandler.hpp"
 #include "handlers/AmazonHandler.hpp"
 #include "handlers/GenericWebHandler.hpp"
 #include "storage/Database.hpp"
+#include "utils/HttpClient.hpp"
 #include "utils/Logger.hpp"
 
 #include <QDir>
 #include <QPluginLoader>
 #include <QJsonArray>
 #include <QSqlQuery>
+#include <QSqlError>
 
 PluginManager::PluginManager() {}
+
+HttpClient* PluginManager::ensureHttpClient() {
+    if (!m_httpClient) {
+        // Created lazily so that the QNetworkAccessManager lives on the
+        // calling thread (the poller thread), satisfying Qt's thread-affinity
+        // requirement.
+        m_httpClient = new HttpClient();
+    }
+    return m_httpClient;
+}
+
+PluginManager::~PluginManager() {
+    // Clear handlers first so shared_ptr deleters run (which call loader->unload())
+    m_handlers.clear();
+
+    // Then delete the heap-allocated loaders
+    for (auto* loader : m_loaders) {
+        delete loader;
+    }
+    m_loaders.clear();
+
+    delete m_httpClient;
+}
 
 void PluginManager::registerBuiltins() {
     auto steam  = std::make_shared<SteamHandler>();
     auto udemy  = std::make_shared<UdemyHandler>();
     auto amazon = std::make_shared<AmazonHandler>();
 
-    m_handlers[QString::fromStdString(steam->handlerId())]  = steam;
-    m_handlers[QString::fromStdString(udemy->handlerId())]  = udemy;
-    m_handlers[QString::fromStdString(amazon->handlerId())] = amazon;
+    // Built-in handlers have empty urlPatterns (no restriction)
+    m_handlers[QString::fromStdString(steam->handlerId())]  = {steam,  {}};
+    m_handlers[QString::fromStdString(udemy->handlerId())]  = {udemy,  {}};
+    m_handlers[QString::fromStdString(amazon->handlerId())] = {amazon, {}};
 
     Logger::info("Registered built-in handlers: steam, udemy, amazon");
 }
 
-bool PluginManager::validatePluginMetadata(const QJsonObject& meta) const {
+bool PluginManager::validatePluginMetadata(const QJsonObject& meta) {
     // Required fields
     if (!meta.contains("id") || !meta.contains("name") ||
         !meta.contains("version") || !meta.contains("urlPatterns")) {
@@ -73,33 +100,61 @@ void PluginManager::loadPlugins(const QString& pluginDir) {
     const QStringList filters = {"*.so", "*.dll", "*.dylib"};
     for (const QString& file : dir.entryList(filters, QDir::Files)) {
         QString path = dir.absoluteFilePath(file);
-        QPluginLoader loader(path);
+        QPluginLoader* loader = new QPluginLoader(path);
 
-        QJsonObject meta = loader.metaData().value("MetaData").toObject();
+        QJsonObject meta = loader->metaData().value("MetaData").toObject();
         if (!validatePluginMetadata(meta)) {
             Logger::warn("Skipping plugin (invalid metadata): " + path.toStdString());
+            delete loader;
             continue;
         }
 
-        QObject* obj = loader.instance();
+        QObject* obj = loader->instance();
         if (!obj) {
-            Logger::error("Failed to load plugin: " + loader.errorString().toStdString());
+            Logger::error("Failed to load plugin: " + loader->errorString().toStdString());
+            delete loader;
             continue;
         }
 
         IPlugin* plugin = qobject_cast<IPlugin*>(obj);
         if (!plugin) {
             Logger::error("Plugin does not implement IPlugin: " + path.toStdString());
-            loader.unload();
+            loader->unload();
+            delete loader;
             continue;
         }
 
         QString id = meta.value("id").toString();
-        m_handlers[id] = std::shared_ptr<IPriceHandler>(plugin, [&loader](IPriceHandler*) {
-            loader.unload();
-        });
+
+        // Extract urlPatterns from metadata
+        QStringList urlPatterns;
+        QJsonArray patternsArray = meta.value("urlPatterns").toArray();
+        for (const auto& p : patternsArray) {
+            urlPatterns.append(p.toString());
+        }
+
+        // Store the loader so it lives as long as the plugin
+        m_loaders[id] = loader;
+
+        // Capture loader pointer by value — safe because loader lives on the heap
+        m_handlers[id] = {
+            std::shared_ptr<IPriceHandler>(plugin, [loader](IPriceHandler*) {
+                loader->unload();
+            }),
+            urlPatterns
+        };
 
         Logger::info("Loaded plugin: " + id.toStdString() + " from " + path.toStdString());
+
+        // Detect IPlugin2 extended interface
+        IPlugin2* plugin2 = qobject_cast<IPlugin2*>(obj);
+        if (plugin2) {
+            Logger::info("Plugin supports IPlugin2 interface: " + id.toStdString());
+            QString style = plugin2->styleSheet();
+            if (!style.isEmpty()) {
+                Logger::info("Plugin provides custom stylesheet: " + id.toStdString());
+            }
+        }
     }
 }
 
@@ -109,7 +164,7 @@ void PluginManager::loadJsonSources() {
                 Database::connection());
 
     if (!q.exec()) {
-        Logger::error("loadJsonSources query failed");
+        Logger::warn("Failed to execute sources query: " + q.lastError().text().toStdString());
         return;
     }
 
@@ -123,7 +178,8 @@ void PluginManager::loadJsonSources() {
         cfg.isDeveloperPlugin = false;
 
         auto handler = std::make_shared<GenericWebHandler>(cfg);
-        m_handlers[QString::fromStdString(cfg.id)] = handler;
+        // JSON sources have no URL pattern restriction (empty patterns)
+        m_handlers[QString::fromStdString(cfg.id)] = {handler, {}};
         Logger::info("Loaded JSON source: " + cfg.id);
     }
 }
@@ -131,7 +187,48 @@ void PluginManager::loadJsonSources() {
 IPriceHandler* PluginManager::handlerFor(const std::string& sourceId) const {
     auto it = m_handlers.find(QString::fromStdString(sourceId));
     if (it == m_handlers.end()) return nullptr;
-    return it->get();
+    return it->handler.get();
+}
+
+FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::string& url) {
+    auto it = m_handlers.find(QString::fromStdString(sourceId));
+    if (it == m_handlers.end()) {
+        return FetchResult{false, 0, 0, "No handler found for source: " + sourceId};
+    }
+
+    const HandlerEntry& entry = it.value();
+
+    // If urlPatterns is non-empty, enforce URL matching
+    if (!entry.urlPatterns.isEmpty()) {
+        QString qUrl = QString::fromStdString(url);
+        bool matched = false;
+        for (const QString& pattern : entry.urlPatterns) {
+            if (qUrl.contains(pattern.left(pattern.indexOf('*')))) {
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            return FetchResult{false, 0, 0, "URL does not match handler's allowed patterns"};
+        }
+    }
+
+    // Lazily create the HttpClient on the calling thread (poller thread)
+    // and inject it into handlers that were constructed without one.
+    entry.handler->setHttpClient(ensureHttpClient());
+
+    return entry.handler->fetchProduct(url);
+}
+
+QList<IPlugin2*> PluginManager::plugin2Interfaces() const {
+    QList<IPlugin2*> result;
+    for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
+        IPlugin2* p2 = dynamic_cast<IPlugin2*>(it.value().handler.get());
+        if (p2) {
+            result.append(p2);
+        }
+    }
+    return result;
 }
 
 std::vector<SourceConfig> PluginManager::availableSources() const {
@@ -139,8 +236,8 @@ std::vector<SourceConfig> PluginManager::availableSources() const {
     for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
         SourceConfig cfg;
         cfg.id   = it.key().toStdString();
-        cfg.name = it.value()->displayName();
-        cfg.isDeveloperPlugin = (dynamic_cast<IPlugin*>(it.value().get()) != nullptr);
+        cfg.name = it.value().handler->displayName();
+        cfg.isDeveloperPlugin = (dynamic_cast<IPlugin*>(it.value().handler.get()) != nullptr);
         sources.push_back(cfg);
     }
     return sources;

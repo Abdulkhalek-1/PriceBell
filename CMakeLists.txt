@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PriceBell VERSION 1.0.0 LANGUAGES CXX)
+project(PriceBell VERSION 1.2.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia)
 
 set(TS_FILES
     i18n/pricebell_en.ts
@@ -38,6 +38,7 @@ target_link_libraries(PriceBell
     Qt5::Sql
     Qt5::Network
     Qt5::Svg
+    Qt5::Multimedia
 )
 
 # Create plugins directory next to binary
@@ -73,7 +74,7 @@ set(TEST_COMMON_SOURCES
     src/utils/Logger.cpp
 )
 
-file(GLOB TEST_SOURCES "tests/test_price_checker.cpp" "tests/test_repository.cpp")
+file(GLOB TEST_SOURCES "tests/test_price_checker.cpp" "tests/test_repository.cpp" "tests/test_currency_utils.cpp")
 foreach(TEST_SRC ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
     add_executable(${TEST_NAME} ${TEST_SRC} ${TEST_COMMON_SOURCES})
@@ -81,3 +82,39 @@ foreach(TEST_SRC ${TEST_SOURCES})
     target_link_libraries(${TEST_NAME} Qt5::Sql Qt5::Network)
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
+
+# Plugin validation test
+set(TEST_VALIDATION_SOURCES
+    src/core/PluginManager.cpp
+    src/handlers/SteamHandler.cpp
+    src/handlers/UdemyHandler.cpp
+    src/handlers/AmazonHandler.cpp
+    src/handlers/GenericWebHandler.cpp
+    src/storage/Database.cpp
+    src/storage/ProductRepository.cpp
+    src/storage/AlertRepository.cpp
+    src/utils/Logger.cpp
+    src/utils/HttpClient.cpp
+    src/utils/SettingsProvider.cpp
+    include/utils/HttpClient.hpp
+)
+add_executable(test_validation tests/test_validation.cpp ${TEST_VALIDATION_SOURCES})
+target_include_directories(test_validation PRIVATE include)
+target_link_libraries(test_validation Qt5::Widgets Qt5::Sql Qt5::Network)
+add_test(NAME test_validation COMMAND test_validation)
+
+# URL validation test — needs handler + HttpClient sources
+set(URL_VALIDATION_SOURCES
+    src/handlers/SteamHandler.cpp
+    src/handlers/UdemyHandler.cpp
+    src/handlers/AmazonHandler.cpp
+    src/handlers/GenericWebHandler.cpp
+    src/utils/HttpClient.cpp
+    src/utils/Logger.cpp
+    src/utils/SettingsProvider.cpp
+    include/utils/HttpClient.hpp
+)
+add_executable(test_url_validation tests/test_url_validation.cpp ${URL_VALIDATION_SOURCES})
+target_include_directories(test_url_validation PRIVATE include)
+target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
+add_test(NAME test_url_validation COMMAND test_url_validation)

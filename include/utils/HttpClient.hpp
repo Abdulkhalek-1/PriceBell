@@ -3,10 +3,21 @@
 #include <QObject>
 #include <QNetworkAccessManager>
 #include <QString>
+#include <QByteArray>
+#include <QUrl>
+#include <QMap>
 #include <functional>
+#include "utils/Constants.hpp"
 
-// Thin async wrapper around QNetworkAccessManager.
-// Caller provides a callback; the reply is parsed on the main thread via Qt event loop.
+// Result of a synchronous HTTP request.
+struct SyncResponse {
+    bool ok = false;
+    QByteArray body;
+    QString error;
+};
+
+// Thin wrapper around QNetworkAccessManager with both async and sync APIs.
+// Caller provides a callback for async; sync methods block via QEventLoop with timeout.
 class HttpClient : public QObject {
     Q_OBJECT
 public:
@@ -14,10 +25,18 @@ public:
 
     explicit HttpClient(QObject* parent = nullptr);
 
-    // Issues a GET request. Calls callback(success, responseBody, errorMessage) when done.
+    // Issues an async GET request. Calls callback(success, responseBody, errorMessage) when done.
     void get(const QString& url, Callback callback);
 
-    // Sets request headers (e.g. Authorization, User-Agent).
+    // Synchronous GET with timeout.
+    SyncResponse getSync(const QUrl& url, int timeoutMs = PriceBell::kDefaultNetworkTimeoutMs);
+
+    // Synchronous POST with timeout.
+    SyncResponse postSync(const QUrl& url, const QByteArray& body,
+                          const QMap<QString, QString>& headers = {},
+                          int timeoutMs = PriceBell::kDefaultNetworkTimeoutMs);
+
+    // Sets default request headers (e.g. Authorization, User-Agent).
     void setHeader(const QString& key, const QString& value);
 
 private:

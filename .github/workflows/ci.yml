@@ -19,7 +19,8 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential cmake \
             qtbase5-dev qttools5-dev qttools5-dev-tools \
-            libqt5svg5-dev libqt5sql5-sqlite
+            libqt5svg5-dev libqt5sql5-sqlite \
+            qtmultimedia5-dev
 
       - name: Cache CMake build
         uses: actions/cache@v4

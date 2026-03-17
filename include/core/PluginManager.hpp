@@ -1,13 +1,19 @@
 #pragma once
 
 #include "core/IPriceHandler.hpp"
+#include "core/IPlugin2.hpp"
 #include "core/DataStructs.hpp"
 
 #include <QString>
+#include <QStringList>
+#include <QList>
 #include <QMap>
 #include <QJsonObject>
 #include <memory>
 #include <vector>
+
+class QPluginLoader;
+class HttpClient;
 
 // Manages all available price handlers — both built-in and dynamically loaded.
 //
@@ -20,6 +26,7 @@
 class PluginManager {
 public:
     PluginManager();
+    ~PluginManager();
 
     // Registers the three built-in handlers (Steam, Udemy, Amazon).
     void registerBuiltins();
@@ -33,12 +40,27 @@ public:
     // Returns the handler for the given source id, or nullptr if not found.
     IPriceHandler* handlerFor(const std::string& sourceId) const;
 
+    // Fetches a product, enforcing URL pattern restrictions for plugins.
+    FetchResult fetchProduct(const std::string& sourceId, const std::string& url);
+
     // Returns metadata for all registered handlers (for UI source selector).
     std::vector<SourceConfig> availableSources() const;
 
-private:
-    // Validates that a plugin's declared metadata is safe to load.
-    bool validatePluginMetadata(const QJsonObject& meta) const;
+    // Returns all plugins that implement the IPlugin2 extended interface.
+    QList<IPlugin2*> plugin2Interfaces() const;
 
-    QMap<QString, std::shared_ptr<IPriceHandler>> m_handlers;
+    // Validates that a plugin's declared metadata is safe to load.
+    static bool validatePluginMetadata(const QJsonObject& meta);
+
+private:
+    struct HandlerEntry {
+        std::shared_ptr<IPriceHandler> handler;
+        QStringList urlPatterns; // empty for built-in handlers (no restriction)
+    };
+
+    HttpClient* ensureHttpClient();
+
+    QMap<QString, HandlerEntry>      m_handlers;
+    QMap<QString, QPluginLoader*>    m_loaders;
+    HttpClient*                      m_httpClient = nullptr;
 };
