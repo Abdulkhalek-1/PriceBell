@@ -202,6 +202,7 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "PriceBell ${{ github.ref_name }}" \
             --notes-file /tmp/changelog.txt \
+            --clobber \
             artifacts/*
 
   fallback:
@@ -253,4 +254,5 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --title "PriceBell ${{ github.ref_name }}" \
             --notes-file /tmp/changelog.txt \
+            --clobber \
             PriceBell-${{ github.ref_name }}-linux-x86_64.tar.gz
