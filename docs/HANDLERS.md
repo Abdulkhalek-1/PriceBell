@@ -10,7 +10,7 @@
 The following built-in handlers serve as reference implementations:
 
 | Handler | Platform | Approach |
-|---|---|---|
+| --- | --- | --- |
 | `SteamHandler` | Steam Store | Uses the `/api/appdetails` endpoint. Extracts the app ID from the URL via regex. |
 | `UdemyHandler` | Udemy | Uses Udemy API v2.0 with HTTP Basic Auth (client credentials). |
 | `AmazonHandler` | Amazon | Uses the Product Advertising API 5.0. Extracts the ASIN from the URL. |
@@ -25,13 +25,19 @@ Create `include/handlers/MyHandler.hpp`:
 ```cpp
 #pragma once
 #include "core/IPriceHandler.hpp"
-#include "utils/HttpClient.hpp"
+
+class HttpClient;
 
 class MyHandler : public IPriceHandler {
 public:
+    bool validateUrl(const std::string& url) const override;
     FetchResult fetchProduct(const std::string& url) override;
     std::string handlerId() const override;
     std::string displayName() const override;
+    void setHttpClient(HttpClient* http) override { m_http = http; }
+
+private:
+    HttpClient* m_http = nullptr;
 };
 ```
 
@@ -39,10 +45,11 @@ public:
 
 Create `src/handlers/MyHandler.cpp`:
 
-Implement `fetchProduct()` using `HttpClient` for async HTTP requests. Parse the API response to extract price and discount values. Return a `FetchResult` with `success=true` on success, or `success=false` with a descriptive `errorMsg` on failure.
+Implement `fetchProduct()` using the injected `HttpClient` for HTTP requests. The `HttpClient*` is set by `PluginManager` via `setHttpClient()` before `fetchProduct()` is called -- do not create your own `HttpClient` instance.
 
 ```cpp
 #include "handlers/MyHandler.hpp"
+#include "utils/HttpClient.hpp"
 #include "utils/Logger.hpp"
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -55,11 +62,20 @@ std::string MyHandler::displayName() const {
     return "My Handler";
 }
 
+bool MyHandler::validateUrl(const std::string& url) const {
+    return url.find("https://mystore.com/product/") == 0;
+}
+
 FetchResult MyHandler::fetchProduct(const std::string& url) {
     FetchResult result;
 
-    HttpClient client;
-    auto response = client.get("https://api.example.com/price?url=" + url);
+    if (!validateUrl(url)) {
+        result.errorMsg = "Invalid URL for this handler";
+        return result;
+    }
+
+    auto response = m_http->getSync(
+        "https://api.mystore.com/price?url=" + url);
 
     if (!response.success) {
         result.errorMsg = "HTTP request failed: " + response.error;
@@ -83,8 +99,7 @@ FetchResult MyHandler::fetchProduct(const std::string& url) {
 In `PluginManager::registerBuiltins()`, add the new handler:
 
 ```cpp
-auto handler = std::make_shared<MyHandler>();
-m_handlers[handler->handlerId()] = handler;
+registerHandler("myhandler", std::make_shared<MyHandler>());
 ```
 
 Include the header at the top of the file:
@@ -118,7 +133,17 @@ m_sourceCombo->addItem("My Handler");
 
 Ensure the combo box index aligns with the `SourceType` enum value.
 
-### 6. Pre-seed in Database Schema
+### 6. Add Source Icon
+
+Create an SVG icon for the new source at `assets/icons/source_myhandler.svg` (24x24, Catppuccin stroke style). Register it in `assets/resources.qrc`:
+
+```xml
+<file>icons/source_myhandler.svg</file>
+```
+
+Then reference it in `MainWindow::refreshTable()` and `SettingsDialog::createPluginsTab()` for the new source type.
+
+### 7. Pre-seed in Database Schema
 
 Add an `INSERT` statement for the new source in `Database::applySchema()`:
 
@@ -128,11 +153,11 @@ INSERT OR IGNORE INTO sources (id, name, type) VALUES ('myhandler', 'My Handler'
 
 This ensures the source exists in the database on first run and after schema migrations.
 
-### 7. Update CMakeLists.txt
+### 8. Update CMakeLists.txt
 
 The project uses `file(GLOB_RECURSE)` to collect source files, so new files placed in `src/handlers/` and `include/handlers/` are picked up automatically. No CMake changes are needed.
 
-### 8. Add Source Mapping
+### 9. Add Source Mapping
 
 Update the mapping functions in `ProductRepository` to handle the new source type:
 
@@ -149,3 +174,7 @@ if (type == SourceType::MyHandler) return "myhandler";
 ```
 
 These functions translate between the string IDs stored in the database and the `SourceType` enum used in application code.
+
+### 10. Add Translations
+
+Add `tr()` strings for the handler's display name in `MainWindow::refreshTable()` and add corresponding entries to all three `.ts` files in `i18n/`.

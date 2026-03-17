@@ -4,26 +4,26 @@
 
 - **CMake** 3.16 or later
 - **C++17 compiler**: GCC 9+, Clang 10+, or MSVC 2019+
-- **Qt5 modules**: Widgets, Sql, Network, Svg, LinguistTools
+- **Qt5 modules**: Widgets, Sql, Network, Svg, LinguistTools, Multimedia
 
 ### Platform-specific package installation
 
 **Ubuntu / Debian:**
 
 ```bash
-sudo apt install cmake g++ qtbase5-dev libqt5sql5-sqlite libqt5svg5-dev qttools5-dev
+sudo apt install cmake g++ qtbase5-dev libqt5sql5-sqlite libqt5svg5-dev qttools5-dev qtmultimedia5-dev
 ```
 
 **Fedora:**
 
 ```bash
-sudo dnf install cmake gcc-c++ qt5-qtbase-devel qt5-qtsvg-devel qt5-qttools-devel
+sudo dnf install cmake gcc-c++ qt5-qtbase-devel qt5-qtsvg-devel qt5-qttools-devel qt5-qtmultimedia-devel
 ```
 
 **Arch Linux:**
 
 ```bash
-sudo pacman -S cmake qt5-base qt5-svg qt5-tools
+sudo pacman -S cmake qt5-base qt5-svg qt5-tools qt5-multimedia
 ```
 
 **macOS (Homebrew):**
@@ -37,7 +37,7 @@ brew install cmake qt@5
 Install Qt5 via the [Qt Online Installer](https://www.qt.io/download-qt-installer) or through [vcpkg](https://vcpkg.io/):
 
 ```
-vcpkg install qt5-base qt5-svg qt5-tools
+vcpkg install qt5-base qt5-svg qt5-tools qt5-multimedia
 ```
 
 ## Build Steps
@@ -67,7 +67,7 @@ The project version from `project(PriceBell VERSION x.y.z)` is passed to the com
 After a successful build, three post-build actions are performed:
 
 1. A `plugins/` directory is created next to the output binary (for runtime plugin loading).
-2. The `assets/` directory is copied alongside the binary so that themes and resources are available at runtime.
+2. The `assets/` directory is copied alongside the binary so that themes, icons, sounds, and resources are available at runtime.
 3. Translation `.qm` files are copied to an `i18n/` directory next to the binary.
 
 ## Running Tests
@@ -77,7 +77,12 @@ cd build
 ctest --output-on-failure
 ```
 
-There are two test targets:
+Test targets:
 
 - **test_price_checker** -- validates price and discount filter/matching logic.
 - **test_repository** -- exercises the SQLite ProductRepository and AlertRepository using an in-memory database.
+- **test_url_validation** -- verifies handler URL validation and rejection of invalid URLs.
+- **test_validation** -- plugin validation and handler registration tests.
+- **test_currency_utils** -- currency formatting tests.
+- **test_settings_provider** -- SettingsProvider read/write tests.
+- **test_logger** -- Logger output and level filtering tests.

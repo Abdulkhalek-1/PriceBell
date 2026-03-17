@@ -4,7 +4,7 @@
 
 ### Installation
 
-Build PriceBell from source by following the instructions in [BUILDING.md](BUILDING.md). Pre-built binaries may be available in future releases.
+Build PriceBell from source by following the instructions in [BUILDING.md](BUILDING.md). Pre-built binaries may be available on the [Releases](https://github.com/Abdulkhalek-1/PriceBell/releases) page.
 
 ### First Launch
 
@@ -16,19 +16,19 @@ When you start PriceBell for the first time:
 
 ## Adding a Product
 
-1. Click the **+ Add Product** button in the toolbar, or go to **File > Add Product**.
+1. Click the **Add Product** button in the toolbar, or go to **File > Add Product**.
 2. Fill in the product details in the dialog that appears:
 
 | Field | Description |
-|-------|-------------|
+| --- | --- |
 | Name | A label for your own reference |
 | URL | The product page URL |
-| Source | Select one of: Steam, Udemy, Amazon, or Generic |
+| Source | Select one of: Steam, Udemy, Amazon, Generic, or a plugin source |
 
 ### Source-specific URL formats
 
-- **Steam**: Paste a Steam store URL such as `https://store.steampowered.com/app/730/Counter-Strike_2/`, or enter just the numeric app ID.
-- **Udemy**: Paste a course URL such as `https://www.udemy.com/course/my-course/`.
+- **Steam**: Paste a Steam store URL such as `https://store.steampowered.com/app/730/Counter-Strike_2/`. Both `https://` and `http://` are accepted, including age-check URLs like `https://store.steampowered.com/agecheck/app/730/`.
+- **Udemy**: Paste a course URL such as `https://www.udemy.com/course/my-course/`. URLs with or without `www.` and both `http://` and `https://` are accepted.
 - **Amazon**: Paste a product page URL. Amazon tracking requires PA API credentials configured in Settings (see below).
 - **Generic**: Used for custom sources added through the plugin system or JSON config sources.
 
@@ -56,13 +56,14 @@ Each product has its own polling interval that controls how frequently PriceBell
 The main window displays all tracked products in a table with the following columns:
 
 | Column | Description |
-|--------|-------------|
+| --- | --- |
 | Name | Product label |
-| Source | Handler used (Steam, Udemy, Amazon, Generic, or plugin name) |
-| Current Price | Last fetched price |
+| Source | Handler used (Steam, Udemy, Amazon, Generic, or plugin name) with source icon |
+| Current Price | Last fetched price (formatted with currency) |
 | Discount % | Last fetched discount percentage |
-| Status | Watching, Paused, Checking..., Error, or Alert! |
+| Status | Watching, Paused, Checking..., Error, or Alert! with status icon |
 | Last Checked | Timestamp of the most recent price fetch |
+| Conditions | Alert conditions configured for this product |
 | Interval (s) | Polling interval in seconds |
 
 ## Check Now
@@ -79,7 +80,8 @@ You can manually trigger an immediate price check without waiting for the next p
 When all conditions for a product are met:
 
 - A **desktop notification** is shown via the system tray.
-- The corresponding row in the product table is **highlighted**.
+- A **notification sound** is played (if enabled in Settings).
+- The corresponding row in the product table is **highlighted** with an alert icon.
 
 ### Alert History
 
@@ -103,51 +105,72 @@ PriceBell runs in the background via the system tray, allowing it to continue mo
 
 ## Settings
 
-Open the settings dialog by clicking the **Settings** button in the toolbar, or go to **Tools > Settings**.
+Open the settings dialog by clicking the **Settings** button in the toolbar, or go to **Tools > Settings**. Settings are organized into three tabs.
 
-### Udemy API
+### General Tab
+
+**Startup:**
 
 | Field | Description |
-|-------|-------------|
+| --- | --- |
+| Open on Startup | Launch PriceBell automatically when your system starts |
+
+**Updates:**
+
+| Field | Description |
+| --- | --- |
+| Check for updates on startup | Automatically check GitHub for new releases when the app launches |
+
+You can also manually check via **Help > Check for Updates**. If a newer version is available, you will be offered a link to the release page.
+
+**Notifications:**
+
+| Field | Description |
+| --- | --- |
+| Play notification sound | Enable or disable alert sounds |
+| Sound file path | Path to a custom `.wav` file, or leave empty for the built-in bell |
+| Browse | Select a `.wav` file from your filesystem |
+| Test | Preview the selected notification sound |
+| Reset | Reset to the built-in default sound |
+
+**Polling:**
+
+| Field | Description |
+| --- | --- |
+| Default Check Interval | The default polling interval (in seconds) applied to new products |
+
+**Language:**
+
+Select from English, Arabic, or French. Changing the language automatically restarts the application to apply the new locale. Arabic enables right-to-left (RTL) layout.
+
+### API Keys Tab
+
+**Udemy API:**
+
+| Field | Description |
+| --- | --- |
 | Client ID | Your Udemy API client ID |
 | Client Secret | Your Udemy API client secret |
 
 Obtain these from the [Udemy API](https://www.udemy.com/developers/) page.
 
-### Amazon Product Advertising API
+**Amazon Product Advertising API:**
 
 | Field | Description |
-|-------|-------------|
+| --- | --- |
 | Access Key | Your Amazon PA API access key |
 | Secret Key | Your Amazon PA API secret key |
 | Partner Tag | Your Amazon Associates partner tag |
 
 These are required to track Amazon product prices. Sign up through [Amazon Associates](https://affiliate-program.amazon.com/).
 
-### Startup
+### Plugins Tab
 
-| Field | Description |
-|-------|-------------|
-| Open on Startup | Launch PriceBell automatically when your system starts |
+**Plugin Directory:** Path to the directory where PriceBell looks for native plugins. Click **Browse** to select a directory.
 
-### Updates
+**Registered Handlers:** A list of all loaded handlers (both built-in and plugin), showing their name, ID, source icon, and a badge indicating whether they are built-in or plugin-provided. The footer shows a count of built-in vs. plugin handlers.
 
-| Field | Description |
-|-------|-------------|
-| Check for updates on startup | Automatically check GitHub for new releases when the app launches |
-
-You can also manually check via **Help > Check for Updates**. If a newer version is available, you will be offered a link to the release page.
-
-### General
-
-| Field | Description |
-|-------|-------------|
-| Default Check Interval | The default polling interval (in seconds) applied to new products |
-| Plugin Directory | Path to the directory where PriceBell looks for native plugins |
-
-### Language
-
-Select from English, Arabic, or French. Changing the language automatically restarts the application to apply the new locale. Arabic enables right-to-left (RTL) layout.
+Plugins that implement the `IPlugin2` interface may display additional settings widgets inline below their handler row.
 
 ## Restarting
 
