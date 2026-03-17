@@ -4,12 +4,16 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g. v1.2.0)'
+        required: true
 
 permissions:
   contents: write
 
 env:
-  VERSION: ${{ github.ref_name }}
+  VERSION: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
   linux-appimage:
@@ -40,12 +44,9 @@ jobs:
 
       - name: Prepare AppDir
         run: |
-          mkdir -p AppDir/usr/bin/i18n
-          mkdir -p AppDir/usr/bin/plugins
-
+          mkdir -p AppDir/usr/bin/i18n AppDir/usr/bin/plugins
           cp build/PriceBell AppDir/usr/bin/
           cp build/i18n/*.qm AppDir/usr/bin/i18n/ 2>/dev/null || true
-
           rsvg-convert -w 256 -h 256 assets/logo.svg -o pricebell.png
 
       - name: Download linuxdeploy
@@ -135,10 +136,8 @@ jobs:
           New-Item -ItemType Directory -Path "$dir/plugins" -Force
           Copy-Item LICENSE, README.md $dir/
 
-          # Bundle Qt DLLs
           windeployqt --release --no-translations --no-opengl-sw "$dir/PriceBell.exe"
 
-          # Bundle OpenSSL 1.1.x DLLs (required by Qt 5.15 for HTTPS)
           $sslBin = "C:\Program Files\OpenSSL\bin"
           if (Test-Path "$sslBin\libssl-1_1*.dll") {
               Copy-Item "$sslBin\libssl-1_1*.dll" "$dir/"
@@ -171,7 +170,7 @@ jobs:
           path: PriceBell-${{ env.VERSION }}-windows-${{ matrix.arch }}.zip
 
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     needs: [linux-appimage, windows]
 
@@ -179,6 +178,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ env.VERSION }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -188,71 +188,18 @@ jobs:
 
       - name: Generate changelog
         run: |
-          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
-          if [ "$PREV_TAG" = "${{ github.ref_name }}" ] || [ -z "$PREV_TAG" ]; then
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${{ env.VERSION }}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
             git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
           else
-            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD" > /tmp/changelog.txt
+            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..${{ env.VERSION }}" > /tmp/changelog.txt
           fi
 
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "PriceBell ${{ github.ref_name }}" \
-            --notes-file /tmp/changelog.txt \
-            --clobber \
-            artifacts/*
-
-  fallback:
-    runs-on: ubuntu-22.04
-    needs: publish
-    if: failure() && startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - uses: actions/checkout@v4
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
         with:
-          fetch-depth: 0
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential cmake \
-            qtbase5-dev qttools5-dev qttools5-dev-tools \
-            libqt5svg5-dev libqt5sql5-sqlite \
-            qtmultimedia5-dev
-
-      - name: Build
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release
-          cmake --build build --parallel $(nproc)
-
-      - name: Package as tar.gz
-        run: |
-          mkdir -p PriceBell-${{ github.ref_name }}
-          cp build/PriceBell PriceBell-${{ github.ref_name }}/
-          cp -r build/assets PriceBell-${{ github.ref_name }}/ 2>/dev/null || true
-          cp -r build/i18n PriceBell-${{ github.ref_name }}/ 2>/dev/null || true
-          cp LICENSE README.md PriceBell-${{ github.ref_name }}/
-          tar czf PriceBell-${{ github.ref_name }}-linux-x86_64.tar.gz PriceBell-${{ github.ref_name }}
-
-      - name: Generate changelog
-        run: |
-          PREV_TAG=$(git tag --sort=-v:refname | head -2 | tail -1)
-          if [ "$PREV_TAG" = "${{ github.ref_name }}" ] || [ -z "$PREV_TAG" ]; then
-            git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
-          else
-            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..HEAD" > /tmp/changelog.txt
-          fi
-
-      - name: Create GitHub Release (tar.gz fallback)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "PriceBell ${{ github.ref_name }}" \
-            --notes-file /tmp/changelog.txt \
-            --clobber \
-            PriceBell-${{ github.ref_name }}-linux-x86_64.tar.gz
+          tag_name: ${{ env.VERSION }}
+          name: PriceBell ${{ env.VERSION }}
+          body_path: /tmp/changelog.txt
+          files: artifacts/*
+          fail_on_unmatched_files: false
