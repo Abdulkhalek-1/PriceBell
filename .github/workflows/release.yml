@@ -162,7 +162,6 @@ jobs:
           Compress-Archive -Path $dir -DestinationPath "PriceBell-${tag}-windows-${arch}.zip"
 
       - name: Build NSIS installer
-        if: matrix.arch == 'x64'
         shell: pwsh
         run: |
           choco install nsis -y --no-progress
@@ -170,10 +169,10 @@ jobs:
           $arch = "${{ matrix.arch }}"
           $stagingDir = "$env:GITHUB_WORKSPACE\PriceBell-${{ env.VERSION }}-windows-$arch"
           $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
-          & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir packaging\windows\installer.nsi
-          $setupFile = "packaging\windows\PriceBell-$version-windows-setup.exe"
+          & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir /DARCH=$arch packaging\windows\installer.nsi
+          $setupFile = "packaging\windows\PriceBell-$version-windows-$arch-setup.exe"
           if (Test-Path $setupFile) {
-            Move-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-x64-setup.exe"
+            Move-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-$arch-setup.exe"
           }
 
       - name: Sign Windows executable
@@ -197,7 +196,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             PriceBell-${{ env.VERSION }}-windows-${{ matrix.arch }}.zip
-            PriceBell-${{ env.VERSION }}-windows-x64-setup.exe
+            PriceBell-${{ env.VERSION }}-windows-${{ matrix.arch }}-setup.exe
 
   publish:
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'

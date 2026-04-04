@@ -1,14 +1,18 @@
 ; PriceBell Windows NSIS Installer
 ; Requires NSIS 3.x: https://nsis.sourceforge.io/
-; Build: makensis /DVERSION=1.3.0 packaging/windows/installer.nsi
+; Build: makensis /DVERSION=1.3.0 /DARCH=x64 packaging/windows/installer.nsi
 
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 
 ; --- General -----------------------------------------------------------------
 Name              "PriceBell"
-OutFile           "PriceBell-${VERSION}-windows-setup.exe"
-InstallDir        "$PROGRAMFILES64\PriceBell"
+OutFile           "PriceBell-${VERSION}-windows-${ARCH}-setup.exe"
+!if "${ARCH}" == "x86"
+  InstallDir      "$PROGRAMFILES\PriceBell"
+!else
+  InstallDir      "$PROGRAMFILES64\PriceBell"
+!endif
 InstallDirRegKey  HKLM "Software\PriceBell" "InstallDir"
 RequestExecutionLevel admin
 Unicode True
