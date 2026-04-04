@@ -159,7 +159,7 @@ void MainWindow::setupMenu() {
 
 void MainWindow::setupTray() {
     m_trayIcon = new TrayIcon(this, this);
-    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &QWidget::show);
+    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &MainWindow::showFromTray);
     connect(m_trayIcon, &TrayIcon::quitRequested, qApp, &QApplication::quit);
     m_trayIcon->show();
 }
@@ -483,4 +483,24 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         tr("PriceBell is still running in the background."),
         QSystemTrayIcon::Information, 3000);
     event->ignore();
+}
+
+void MainWindow::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::WindowStateChange) {
+        QSettings s("PriceBell", "PriceBell");
+        s.setValue("window/wasFullscreen",
+                   bool(windowState() & Qt::WindowFullScreen));
+    }
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::showFromTray() {
+    QSettings s("PriceBell", "PriceBell");
+    if (s.value("window/wasFullscreen", false).toBool()) {
+        showFullScreen();
+    } else {
+        showNormal();
+    }
+    raise();
+    activateWindow();
 }
