@@ -36,6 +36,7 @@ QString UpdateDownloader::selectAssetUrl(const QJsonArray& assets) const {
 }
 
 void UpdateDownloader::download(const QJsonArray& assets) {
+    if (m_reply) return; // download already in progress
     QString url = selectAssetUrl(assets);
     if (url.isEmpty()) {
         emit failed(tr("No installer asset found for this platform."));
@@ -69,9 +70,13 @@ void UpdateDownloader::download(const QJsonArray& assets) {
         m_file->close();
         if (m_reply->error() != QNetworkReply::NoError) {
             m_file->remove();
-            emit failed(m_reply->errorString());
+            m_file = nullptr;
+            if (!m_canceling) {
+                emit failed(m_reply->errorString());
+            }
         } else {
             emit finished(m_destPath);
+            m_file = nullptr;
         }
         m_reply->deleteLater();
         m_reply = nullptr;
@@ -79,13 +84,8 @@ void UpdateDownloader::download(const QJsonArray& assets) {
 }
 
 void UpdateDownloader::cancel() {
-    if (m_reply) {
-        m_reply->abort();
-        m_reply = nullptr;
-    }
-    if (m_file) {
-        m_file->close();
-        m_file->remove();
-        m_file = nullptr;
-    }
+    if (!m_reply) return;
+    m_canceling = true;
+    m_reply->abort();   // triggers finished lambda synchronously
+    m_canceling = false;
 }

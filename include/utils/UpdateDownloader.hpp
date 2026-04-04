@@ -28,7 +28,8 @@ private:
     QString platformExtension() const;
 
     QNetworkAccessManager* m_manager;
-    QNetworkReply*         m_reply  = nullptr;
-    QFile*                 m_file   = nullptr;
+    QNetworkReply*         m_reply     = nullptr;
+    QFile*                 m_file      = nullptr;
     QString                m_destPath;
+    bool                   m_canceling = false;
 };

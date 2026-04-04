@@ -413,6 +413,7 @@ void MainWindow::onUpdateAvailable(const QString& version,
     // Don't show if user has skipped this version
     QSettings s("PriceBell", "PriceBell");
     if (s.value("updates/skippedVersion").toString() == version) {
+        m_manualUpdateCheck = false;
         return;
     }
 
