@@ -55,18 +55,27 @@ void TrayIcon::showAlert(const AlertEvent& event) {
         .arg(CurrencyUtils::formatPrice(event.priceAtTrigger, "USD"))
         .arg(static_cast<int>(event.discountAtTrigger));
 
-    // Disconnect any previous click handler to avoid stale URL opens
+    // Disconnect any previous click handler before setting up the new one
     if (m_alertClickConnection) {
         disconnect(m_alertClickConnection);
+        m_alertClickConnection = {};
     }
 
-    m_pendingAlertUrl = QString::fromStdString(event.productUrl);
+    QString alertUrl = QString::fromStdString(event.productUrl);
 
-    if (!m_pendingAlertUrl.isEmpty()) {
+    if (!alertUrl.isEmpty()) {
+        // Capture alertUrl and a pointer to m_alertClickConnection by value/address
+        // so the lambda disconnects its own specific handle, not whatever the member
+        // holds at firing time (which may have been overwritten by a subsequent alert).
         m_alertClickConnection = connect(this, &QSystemTrayIcon::messageClicked,
-                                         this, [this]() {
-            QDesktopServices::openUrl(QUrl(m_pendingAlertUrl));
-            disconnect(m_alertClickConnection);
+                                         this, [this, alertUrl]() {
+            QDesktopServices::openUrl(QUrl(alertUrl));
+            // Disconnect our own handle — safe because we're captured via [this]
+            // and Qt guarantees this lambda won't fire after TrayIcon is destroyed.
+            if (m_alertClickConnection) {
+                disconnect(m_alertClickConnection);
+                m_alertClickConnection = {};
+            }
         });
     }
 
