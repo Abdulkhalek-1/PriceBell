@@ -3,6 +3,7 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QStringList>
 
 #ifndef APP_VERSION
@@ -43,7 +44,9 @@ void UpdateChecker::checkForUpdates() {
             QString remoteVersion = tagName.startsWith('v') ? tagName.mid(1) : tagName;
 
             if (isNewerVersion(APP_VERSION, remoteVersion)) {
-                emit updateAvailable(remoteVersion, htmlUrl);
+                QString releaseBody = obj.value("body").toString();
+                QJsonArray assets   = obj.value("assets").toArray();
+                emit updateAvailable(remoteVersion, htmlUrl, releaseBody, assets);
             } else {
                 emit noUpdateAvailable();
             }
