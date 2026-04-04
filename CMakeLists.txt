@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PriceBell VERSION 1.2.0 LANGUAGES CXX)
+project(PriceBell VERSION 1.3.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +8,13 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
+
+# AddressSanitizer support — enable with -DCMAKE_BUILD_TYPE=Asan
+if(CMAKE_BUILD_TYPE STREQUAL "Asan")
+    message(STATUS "AddressSanitizer enabled")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address)
+endif()
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia)
 
