@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(PriceBell VERSION 1.3.0 LANGUAGES CXX)
 
+include(cmake/VersionInfo.cmake)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
@@ -34,9 +36,14 @@ set(WIN_RESOURCES "")
 if(WIN32)
     set(PLATFORM_FLAGS WIN32)
     set(WIN_RESOURCES assets/app.rc)
+    if(WIN_VERSION_RC)
+        list(APPEND WIN_RESOURCES "${WIN_VERSION_RC}")
+    endif()
 endif()
 
 add_executable(PriceBell ${PLATFORM_FLAGS} ${SOURCES} ${HEADERS} assets/resources.qrc ${QM_FILES} ${WIN_RESOURCES})
+
+pricebell_apply_version_info(PriceBell)
 
 target_include_directories(PriceBell PRIVATE include)
 
