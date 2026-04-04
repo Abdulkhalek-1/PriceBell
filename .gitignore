@@ -32,3 +32,4 @@ qrc_*.cpp
 # OS
 .DS_Store
 Thumbs.db
+compile_commands.json
