@@ -168,7 +168,7 @@ jobs:
           choco install nsis -y --no-progress
           $version = "${{ env.VERSION }}".TrimStart('v')
           $arch = "${{ matrix.arch }}"
-          $stagingDir = "PriceBell-${{ env.VERSION }}-windows-$arch"
+          $stagingDir = "$env:GITHUB_WORKSPACE\PriceBell-${{ env.VERSION }}-windows-$arch"
           $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
           & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir packaging\windows\installer.nsi
           $setupFile = "PriceBell-$version-windows-setup.exe"
