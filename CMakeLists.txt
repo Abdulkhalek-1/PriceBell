@@ -11,6 +11,9 @@ set(CMAKE_AUTORCC ON)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 
+# ── Build options ──────────────────────────────────────────────────────────────
+option(BUILD_EXAMPLES "Build example plugins" OFF)
+
 # AddressSanitizer support — enable with -DCMAKE_BUILD_TYPE=Asan
 if(CMAKE_BUILD_TYPE STREQUAL "Asan")
     message(STATUS "AddressSanitizer enabled")
@@ -134,7 +137,6 @@ target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
 add_test(NAME test_url_validation COMMAND test_url_validation)
 
 # ── Examples (opt-in) ──────────────────────────────────────────────────────────
-option(BUILD_EXAMPLES "Build example plugins" OFF)
 if(BUILD_EXAMPLES)
     add_subdirectory(examples/plugin-starter)
 endif()

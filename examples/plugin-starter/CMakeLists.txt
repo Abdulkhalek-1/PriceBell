@@ -25,8 +25,8 @@ target_include_directories(ExamplePlugin PRIVATE
 
 target_link_libraries(ExamplePlugin Qt5::Core Qt5::Widgets)
 
-# Output the plugin into a 'plugins/' directory for easy testing
+# Output the plugin into a separate directory to avoid polluting the main app's plugins/ dir
 set_target_properties(ExamplePlugin PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/plugins"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples/plugins"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/examples/plugins"
 )

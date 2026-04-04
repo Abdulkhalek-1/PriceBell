@@ -19,14 +19,14 @@ cmake .. -DPRICEBELL_SOURCE_DIR=/path/to/PriceBell
 cmake --build .
 ```
 
-The compiled plugin (`.so` on Linux, `.dll` on Windows) will appear in `build/plugins/`.
+The compiled plugin (`.so` on Linux, `.dll` on Windows) will appear in `build/examples/plugins/`.
 
 Alternatively, build from the PriceBell repo root with the `BUILD_EXAMPLES` option:
 
 ```bash
 cmake -B build-examples -DBUILD_EXAMPLES=ON
 cmake --build build-examples --parallel $(nproc)
-ls build-examples/plugins/
+ls build-examples/examples/plugins/
 ```
 
 ## Installing
@@ -43,5 +43,6 @@ Copy the compiled `.so`/`.dll` to your PriceBell plugins directory
 | `displayName()` | Human-readable name shown in the UI source selector. |
 | `metadata()` | Return JSON with `id`, `name`, `version`, and `urlPatterns`. |
 | `settingsWidget()` | Optional: return a `QWidget*` to embed in PriceBell's Settings → Plugins tab. |
+| `icon()` | Optional: return a `QIcon` to display in PriceBell's plugin list. |
 
 See [docs/PLUGINS.md](../../docs/PLUGINS.md) for the full plugin development guide.

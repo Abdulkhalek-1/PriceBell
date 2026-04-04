@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/IPlugin2.hpp"
+#include "core/DataStructs.hpp"
 #include <QObject>
 #include <QJsonObject>
 #include <QIcon>
