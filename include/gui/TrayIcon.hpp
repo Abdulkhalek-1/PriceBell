@@ -23,4 +23,6 @@ private:
     void buildContextMenu(QWidget* mainWindow);
     bool m_muted = false;
     QAction* m_muteAction = nullptr;
+    QString m_pendingAlertUrl;
+    QMetaObject::Connection m_alertClickConnection;
 };

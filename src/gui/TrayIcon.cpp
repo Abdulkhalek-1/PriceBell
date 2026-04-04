@@ -4,9 +4,11 @@
 #include "utils/Constants.hpp"
 
 #include <QApplication>
+#include <QDesktopServices>
 #include <QFile>
 #include <QIcon>
 #include <QSoundEffect>
+#include <QUrl>
 
 TrayIcon::TrayIcon(QWidget* mainWindow, QObject* parent)
     : QSystemTrayIcon(QIcon(":/assets/icons/tray_normal.svg"), parent)
@@ -47,13 +49,26 @@ void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason) {
 void TrayIcon::showAlert(const AlertEvent& event) {
     if (m_muted || !isSystemTrayAvailable()) return;
 
-    // Use CurrencyUtils for price formatting — we don't have the product's currency
-    // in AlertEvent, so fall back to USD formatting
     QString title = tr("PriceBell Alert");
     QString msg   = tr("%1 — %2 (%3% off)")
         .arg(QString::fromStdString(event.productName))
         .arg(CurrencyUtils::formatPrice(event.priceAtTrigger, "USD"))
         .arg(static_cast<int>(event.discountAtTrigger));
+
+    // Disconnect any previous click handler to avoid stale URL opens
+    if (m_alertClickConnection) {
+        disconnect(m_alertClickConnection);
+    }
+
+    m_pendingAlertUrl = QString::fromStdString(event.productUrl);
+
+    if (!m_pendingAlertUrl.isEmpty()) {
+        m_alertClickConnection = connect(this, &QSystemTrayIcon::messageClicked,
+                                         this, [this]() {
+            QDesktopServices::openUrl(QUrl(m_pendingAlertUrl));
+            disconnect(m_alertClickConnection);
+        });
+    }
 
     showMessage(title, msg, QSystemTrayIcon::Information,
                 PriceBell::kTrayAlertTimeoutMs);
