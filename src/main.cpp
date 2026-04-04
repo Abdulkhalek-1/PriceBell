@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QCommandLineParser>
+#include <QFontDatabase>
 #include <QIcon>
 #include <QTranslator>
 #include <QSettings>
@@ -10,6 +12,7 @@
 #include "storage/Database.hpp"
 #include "utils/Logger.hpp"
 #include "utils/Constants.hpp"
+#include "utils/SettingsProvider.hpp"
 #include "core/DataStructs.hpp"
 
 int main(int argc, char* argv[]) {
@@ -25,8 +28,20 @@ int main(int argc, char* argv[]) {
         app.setApplicationName("PriceBell");
         app.setOrganizationName("PriceBell");
         app.setWindowIcon(QIcon(":/assets/icons/app_icon.svg"));
+        // Bundle Noto Sans to avoid Arial fallback on systems missing it
+        QFontDatabase::addApplicationFont(":/fonts/NotoSans-Regular.ttf");
+        QFontDatabase::addApplicationFont(":/fonts/NotoSans-Bold.ttf");
+        QFontDatabase::addApplicationFont(":/fonts/NotoNaskhArabic-Regular.ttf");
+        app.setFont(QFont("Noto Sans", 10));
         // Keep running in the background when main window is hidden (tray)
         app.setQuitOnLastWindowClosed(false);
+
+        QCommandLineParser parser;
+        parser.addHelpOption();
+        parser.addOption(QCommandLineOption("minimized", "Start minimized to tray"));
+        parser.process(app);
+        bool startMinimized = parser.isSet("minimized")
+                           || SettingsProvider::instance().launchMinimized();
 
         // Initialise file-based logger
         Logger::init(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation).toStdString());
@@ -63,7 +78,9 @@ int main(int argc, char* argv[]) {
         controller.initialize();
 
         MainWindow window(&controller);
-        window.show();
+        if (!startMinimized) {
+            window.show();
+        }
 
         exitCode = app.exec();
         Database::close();

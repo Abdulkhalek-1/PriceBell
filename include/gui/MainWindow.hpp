@@ -18,6 +18,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 public slots:
     void onAlertTriggered(AlertEvent event);
@@ -37,6 +38,7 @@ private slots:
     void onUpdateAvailable(const QString& version, const QString& url);
     void onNoUpdateAvailable();
     void onUpdateCheckFailed(const QString& errorMsg);
+    void showFromTray();
 
 private:
     void setupUi();

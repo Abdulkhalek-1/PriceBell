@@ -4,9 +4,11 @@
 #include "utils/Constants.hpp"
 
 #include <QApplication>
+#include <QDesktopServices>
 #include <QFile>
 #include <QIcon>
 #include <QSoundEffect>
+#include <QUrl>
 
 TrayIcon::TrayIcon(QWidget* mainWindow, QObject* parent)
     : QSystemTrayIcon(QIcon(":/assets/icons/tray_normal.svg"), parent)
@@ -47,13 +49,35 @@ void TrayIcon::onActivated(QSystemTrayIcon::ActivationReason reason) {
 void TrayIcon::showAlert(const AlertEvent& event) {
     if (m_muted || !isSystemTrayAvailable()) return;
 
-    // Use CurrencyUtils for price formatting — we don't have the product's currency
-    // in AlertEvent, so fall back to USD formatting
     QString title = tr("PriceBell Alert");
     QString msg   = tr("%1 — %2 (%3% off)")
         .arg(QString::fromStdString(event.productName))
         .arg(CurrencyUtils::formatPrice(event.priceAtTrigger, "USD"))
         .arg(static_cast<int>(event.discountAtTrigger));
+
+    // Disconnect any previous click handler before setting up the new one
+    if (m_alertClickConnection) {
+        disconnect(m_alertClickConnection);
+        m_alertClickConnection = {};
+    }
+
+    QString alertUrl = QString::fromStdString(event.productUrl);
+
+    if (!alertUrl.isEmpty()) {
+        // Capture alertUrl and a pointer to m_alertClickConnection by value/address
+        // so the lambda disconnects its own specific handle, not whatever the member
+        // holds at firing time (which may have been overwritten by a subsequent alert).
+        m_alertClickConnection = connect(this, &QSystemTrayIcon::messageClicked,
+                                         this, [this, alertUrl]() {
+            QDesktopServices::openUrl(QUrl(alertUrl));
+            // Disconnect our own handle — safe because we're captured via [this]
+            // and Qt guarantees this lambda won't fire after TrayIcon is destroyed.
+            if (m_alertClickConnection) {
+                disconnect(m_alertClickConnection);
+                m_alertClickConnection = {};
+            }
+        });
+    }
 
     showMessage(title, msg, QSystemTrayIcon::Information,
                 PriceBell::kTrayAlertTimeoutMs);
