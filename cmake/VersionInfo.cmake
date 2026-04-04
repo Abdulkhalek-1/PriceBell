@@ -32,7 +32,7 @@ if(WIN32)
         " END\n"
         "END\n"
     )
-    set(WIN_VERSION_RC "${VERSION_RC}" PARENT_SCOPE)
+    set(WIN_VERSION_RC "${VERSION_RC}")
 endif()
 
 macro(pricebell_apply_version_info target)
