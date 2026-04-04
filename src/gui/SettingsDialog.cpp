@@ -70,6 +70,9 @@ QWidget* SettingsDialog::createGeneralTab() {
     m_autoStartCheck = new QCheckBox(tr("Open on Startup"), page);
     m_autoStartCheck->setToolTip(tr("Automatically launch PriceBell when you log in"));
     startupLayout->addWidget(m_autoStartCheck);
+    m_launchMinimizedCheck = new QCheckBox(tr("Launch minimized to tray"), page);
+    m_launchMinimizedCheck->setToolTip(tr("Start in background without showing the main window"));
+    startupLayout->addWidget(m_launchMinimizedCheck);
     layout->addWidget(startupGroup);
 
     // -- Updates ------------------------------------------------------------------
@@ -400,6 +403,7 @@ void SettingsDialog::loadSettings() {
     if (langIdx >= 0) m_languageCombo->setCurrentIndex(langIdx);
 
     m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
+    m_launchMinimizedCheck->setChecked(sp.launchMinimized());
     m_autoUpdateCheck->setChecked(sp.checkUpdatesOnStartup());
 }
 
@@ -447,6 +451,7 @@ void SettingsDialog::saveSettings() {
                 tr("Failed to update auto-start setting."));
         }
     }
+    sp.setLaunchMinimized(m_launchMinimizedCheck->isChecked());
 
     accept();
 }
