@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=PriceBell
+Comment=Desktop price tracker for Steam, Amazon, Udemy and more
+Exec=PriceBell
+Icon=pricebell
+Terminal=false
+Type=Application
+Categories=Utility;Network;
+Keywords=price;tracker;steam;amazon;

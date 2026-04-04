@@ -132,3 +132,48 @@ add_executable(test_url_validation tests/test_url_validation.cpp ${URL_VALIDATIO
 target_include_directories(test_url_validation PRIVATE include)
 target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
 add_test(NAME test_url_validation COMMAND test_url_validation)
+
+# ── Install rules ──────────────────────────────────────────────────────────────
+install(TARGETS PriceBell DESTINATION bin)
+install(DIRECTORY assets/ DESTINATION share/PriceBell/assets)
+install(FILES packaging/linux/pricebell.desktop
+        DESTINATION share/applications)
+install(FILES assets/logo.svg
+        DESTINATION share/icons/hicolor/scalable/apps
+        RENAME pricebell.svg)
+install(FILES packaging/linux/postinst
+        DESTINATION share/PriceBell
+        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
+                    GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
+
+# ── CPack packaging ────────────────────────────────────────────────────────────
+set(CPACK_PACKAGE_NAME            "PriceBell")
+set(CPACK_PACKAGE_VENDOR          "Abdulkhalek Muhammad")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Desktop price tracker for Steam, Udemy, Amazon")
+set(CPACK_PACKAGE_VERSION         "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT         "abdulkhalek@example.com")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "PriceBell")
+
+# DEB
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "Abdulkhalek Muhammad")
+set(CPACK_DEBIAN_PACKAGE_SECTION     "utils")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "libqt5widgets5 (>= 5.12), libqt5sql5 (>= 5.12), libqt5sql5-sqlite, libqt5network5 (>= 5.12), libqt5multimedia5 (>= 5.12), libqt5svg5 (>= 5.12)")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_SOURCE_DIR}/packaging/linux/postinst")
+
+# RPM
+set(CPACK_RPM_PACKAGE_SUMMARY     "Desktop price tracker")
+set(CPACK_RPM_PACKAGE_REQUIRES    "qt5-qtbase >= 5.12, qt5-qtmultimedia >= 5.12, qt5-qtsvg >= 5.12")
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
+    "${CMAKE_SOURCE_DIR}/packaging/linux/postinst")
+
+# Generator is platform-specific
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+elseif(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "DEB;RPM")
+endif()
+include(CPack)
