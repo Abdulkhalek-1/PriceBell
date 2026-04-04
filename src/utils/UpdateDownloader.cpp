@@ -54,6 +54,8 @@ void UpdateDownloader::download(const QJsonArray& assets) {
 
     QNetworkRequest req{QUrl(url)};
     req.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell");
+    req.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
+                     QNetworkRequest::NoLessSafeRedirectPolicy);
     m_reply = m_manager->get(req);
 
     connect(m_reply, &QNetworkReply::downloadProgress,
