@@ -37,6 +37,8 @@ public:
     void setNotificationSoundPath(const QString& path);
     bool checkUpdatesOnStartup() const;
     void setCheckUpdatesOnStartup(bool enabled);
+    bool launchMinimized() const;
+    void setLaunchMinimized(bool enabled);
 
 private:
     SettingsProvider();
@@ -58,4 +60,5 @@ private:
     static constexpr const char* kNotificationSound     = "notifications/sound_enabled";
     static constexpr const char* kNotificationSoundPath = "notifications/sound_path";
     static constexpr const char* kCheckUpdates          = "updates/check_on_startup";
+    static constexpr const char* kLaunchMinimized       = "startup/launchMinimized";
 };
