@@ -175,19 +175,35 @@ jobs:
             Move-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-$arch-setup.exe"
           }
 
-      - name: Sign Windows executable
-        if: env.WINDOWS_CERT_BASE64 != ''
-        env:
-          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
-          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      - name: Upload unsigned exe for SignPath
+        if: vars.SIGNPATH_ORG_ID != ''
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-exe-${{ matrix.arch }}
+          path: build\PriceBell.exe
+
+      - name: Sign with SignPath
+        if: vars.SIGNPATH_ORG_ID != ''
+        uses: signpath/github-actions-for-signpath/submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORG_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          artifact-configuration-slug: ${{ vars.SIGNPATH_ARTIFACT_CONFIG_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-output
+
+      - name: Replace exe with signed version
+        if: vars.SIGNPATH_ORG_ID != ''
         shell: pwsh
         run: |
-          $certBytes = [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64)
-          [IO.File]::WriteAllBytes("cert.pfx", $certBytes)
-          & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign `
-            /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com `
-            /td sha256 /fd sha256 build\PriceBell.exe
-          Remove-Item cert.pfx
+          $zip = Get-ChildItem signed-output -Filter *.zip | Select-Object -First 1
+          Expand-Archive $zip.FullName -DestinationPath signed-output\extracted -Force
+          Copy-Item signed-output\extracted\PriceBell.exe build\PriceBell.exe -Force
+          Write-Host "Replaced build\PriceBell.exe with signed version"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
