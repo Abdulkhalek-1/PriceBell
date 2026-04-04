@@ -187,13 +187,14 @@ jobs:
           [IO.File]::WriteAllBytes("cert.pfx", $certBytes)
           & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.22621.0\x64\signtool.exe" sign `
             /f cert.pfx /p $env:WINDOWS_CERT_PASSWORD /tr http://timestamp.digicert.com `
-            /td sha256 /fd sha256 build\Release\PriceBell.exe
+            /td sha256 /fd sha256 build\PriceBell.exe
           Remove-Item cert.pfx
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-${{ matrix.arch }}
+          if-no-files-found: ignore
           path: |
             PriceBell-${{ env.VERSION }}-windows-${{ matrix.arch }}.zip
             PriceBell-${{ env.VERSION }}-windows-x64-setup.exe

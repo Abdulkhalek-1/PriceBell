@@ -121,7 +121,14 @@ void UpdateDialog::onDownloadFinished(const QString& filePath) {
     m_statusLabel->setText(tr("Download complete. Launching installer…"));
     m_cancelBtn->setVisible(false);
 
-    if (!QProcess::startDetached(filePath, {})) {
+#if defined(Q_OS_WIN)
+    bool launched = QProcess::startDetached(filePath, {});
+#elif defined(Q_OS_MACOS)
+    bool launched = QProcess::startDetached("open", {filePath});
+#else
+    bool launched = QProcess::startDetached("xdg-open", {filePath});
+#endif
+    if (!launched) {
         QMessageBox::critical(this, tr("Update Error"),
             tr("Could not launch installer:\n%1").arg(filePath));
         reject();

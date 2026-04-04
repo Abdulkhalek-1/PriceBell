@@ -29,9 +29,12 @@ int main(int argc, char* argv[]) {
         app.setOrganizationName("PriceBell");
         app.setWindowIcon(QIcon(":/assets/icons/app_icon.svg"));
         // Bundle Noto Sans to avoid Arial fallback on systems missing it
-        QFontDatabase::addApplicationFont(":/fonts/NotoSans-Regular.ttf");
-        QFontDatabase::addApplicationFont(":/fonts/NotoSans-Bold.ttf");
-        QFontDatabase::addApplicationFont(":/fonts/NotoNaskhArabic-Regular.ttf");
+        if (QFontDatabase::addApplicationFont(":/fonts/NotoSans-Regular.ttf") == -1)
+            qWarning("Failed to load bundled font: NotoSans-Regular.ttf");
+        if (QFontDatabase::addApplicationFont(":/fonts/NotoSans-Bold.ttf") == -1)
+            qWarning("Failed to load bundled font: NotoSans-Bold.ttf");
+        if (QFontDatabase::addApplicationFont(":/fonts/NotoNaskhArabic-Regular.ttf") == -1)
+            qWarning("Failed to load bundled font: NotoNaskhArabic-Regular.ttf");
         app.setFont(QFont("Noto Sans", 10));
         // Keep running in the background when main window is hidden (tray)
         app.setQuitOnLastWindowClosed(false);

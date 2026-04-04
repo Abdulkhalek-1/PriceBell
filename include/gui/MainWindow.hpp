@@ -3,6 +3,7 @@
 #include "core/DataStructs.hpp"
 
 #include <QMainWindow>
+#include <QPointer>
 #include <QTableWidget>
 #include <QJsonArray>
 #include <vector>
@@ -57,6 +58,7 @@ private:
     QTableWidget*    m_table;
     TrayIcon*        m_trayIcon;
     UpdateChecker*   m_updateChecker;
+    QPointer<UpdateDialog> m_updateDialog;
     bool             m_manualUpdateCheck = false;
     std::vector<Product> m_products;
 };

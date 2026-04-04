@@ -149,11 +149,6 @@ install(FILES packaging/linux/pricebell.desktop
 install(FILES assets/logo.svg
         DESTINATION share/icons/hicolor/scalable/apps
         RENAME pricebell.svg)
-install(FILES packaging/linux/postinst
-        DESTINATION share/PriceBell
-        PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
-                    GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ)
-
 # ── CPack packaging ────────────────────────────────────────────────────────────
 set(CPACK_PACKAGE_NAME            "PriceBell")
 set(CPACK_PACKAGE_VENDOR          "Abdulkhalek Muhammad")

@@ -418,9 +418,14 @@ void MainWindow::onUpdateAvailable(const QString& version,
     }
 
     m_manualUpdateCheck = false;
-    UpdateDialog* dlg = new UpdateDialog(APP_VERSION, version, body, assets, this);
-    dlg->setAttribute(Qt::WA_DeleteOnClose);
-    dlg->show();
+    if (m_updateDialog) {
+        m_updateDialog->raise();
+        m_updateDialog->activateWindow();
+        return;
+    }
+    m_updateDialog = new UpdateDialog(APP_VERSION, version, body, assets, this);
+    m_updateDialog->setAttribute(Qt::WA_DeleteOnClose);
+    m_updateDialog->show();
 }
 
 void MainWindow::onNoUpdateAvailable() {
