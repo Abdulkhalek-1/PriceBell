@@ -171,9 +171,9 @@ jobs:
           $stagingDir = "$env:GITHUB_WORKSPACE\PriceBell-${{ env.VERSION }}-windows-$arch"
           $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
           & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir packaging\windows\installer.nsi
-          $setupFile = "PriceBell-$version-windows-setup.exe"
+          $setupFile = "packaging\windows\PriceBell-$version-windows-setup.exe"
           if (Test-Path $setupFile) {
-            Rename-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-x64-setup.exe"
+            Move-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-x64-setup.exe"
           }
 
       - name: Sign Windows executable
