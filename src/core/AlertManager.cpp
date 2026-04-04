@@ -22,6 +22,7 @@ void AlertManager::onPriceUpdated(Product product, FetchResult result) {
     AlertEvent event;
     event.productId         = product.id;
     event.productName       = product.name;
+    event.productUrl        = product.url;
     event.priceAtTrigger    = result.price;
     event.discountAtTrigger = result.discount;
     event.triggeredAt       = std::chrono::system_clock::now();

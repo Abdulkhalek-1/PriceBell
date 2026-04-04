@@ -50,6 +50,7 @@ private:
     QLabel*    m_languageLabel;
     // Open on Startup
     QCheckBox* m_autoStartCheck;
+    QCheckBox* m_launchMinimizedCheck = nullptr;
     // Updates
     QCheckBox* m_autoUpdateCheck;
     // Notification sound
