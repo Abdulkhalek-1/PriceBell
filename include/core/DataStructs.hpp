@@ -80,6 +80,7 @@ struct AlertEvent {
     int                                   id                = 0;
     int                                   productId         = 0;
     std::string                           productName;
+    std::string                           productUrl;        // ← add this line
     float                                 priceAtTrigger    = 0.0f;
     float                                 discountAtTrigger = 0.0f;
     std::chrono::system_clock::time_point triggeredAt;
