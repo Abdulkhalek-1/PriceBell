@@ -10,6 +10,8 @@
 #include <QProcess>
 #include <QApplication>
 #include <QMessageBox>
+#include <QDesktopServices>
+#include <QUrl>
 
 UpdateDialog::UpdateDialog(const QString& currentVersion,
                            const QString& newVersion,
@@ -120,7 +122,8 @@ void UpdateDialog::onDownloadFinished(const QString& filePath) {
     m_cancelBtn->setVisible(false);
 
 #if defined(Q_OS_WIN)
-    bool launched = QProcess::startDetached(filePath, {});
+    // Use shell open so Windows handles UAC elevation for the installer
+    bool launched = QDesktopServices::openUrl(QUrl::fromLocalFile(filePath));
 #elif defined(Q_OS_MACOS)
     bool launched = QProcess::startDetached("open", {filePath});
 #else
