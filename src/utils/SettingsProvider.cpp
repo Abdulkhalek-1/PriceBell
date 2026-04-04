@@ -116,3 +116,19 @@ bool SettingsProvider::checkUpdatesOnStartup() const {
 void SettingsProvider::setCheckUpdatesOnStartup(bool enabled) {
     m_settings.setValue(kCheckUpdates, enabled);
 }
+
+bool SettingsProvider::launchMinimized() const {
+    return m_settings.value(kLaunchMinimized, false).toBool();
+}
+
+void SettingsProvider::setLaunchMinimized(bool enabled) {
+    m_settings.setValue(kLaunchMinimized, enabled);
+}
+
+bool SettingsProvider::wasFullscreen() const {
+    return m_settings.value(kWasFullscreen, false).toBool();
+}
+
+void SettingsProvider::setWasFullscreen(bool fullscreen) {
+    m_settings.setValue(kWasFullscreen, fullscreen);
+}
