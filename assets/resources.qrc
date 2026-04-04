@@ -29,4 +29,9 @@
         <!-- Sounds -->
         <file>sounds/alert.wav</file>
     </qresource>
+    <qresource prefix="/fonts">
+        <file alias="NotoSans-Regular.ttf">fonts/NotoSans-Regular.ttf</file>
+        <file alias="NotoSans-Bold.ttf">fonts/NotoSans-Bold.ttf</file>
+        <file alias="NotoNaskhArabic-Regular.ttf">fonts/NotoNaskhArabic-Regular.ttf</file>
+    </qresource>
 </RCC>

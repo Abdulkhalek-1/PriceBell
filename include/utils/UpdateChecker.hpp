@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QJsonArray>
 
 class HttpClient;
 
@@ -14,7 +15,10 @@ public:
     static bool isNewerVersion(const QString& current, const QString& remote);
 
 signals:
-    void updateAvailable(const QString& latestVersion, const QString& releaseUrl);
+    void updateAvailable(const QString& latestVersion,
+                         const QString& releaseUrl,
+                         const QString& releaseBody,
+                         const QJsonArray& assets);
     void noUpdateAvailable();
     void checkFailed(const QString& errorMessage);
 

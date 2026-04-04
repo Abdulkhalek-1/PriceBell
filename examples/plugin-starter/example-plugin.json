@@ -1,0 +1,6 @@
+{
+    "id": "example",
+    "name": "Example Plugin",
+    "version": "1.0",
+    "urlPatterns": ["https://example.com/*"]
+}

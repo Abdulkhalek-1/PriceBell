@@ -3,12 +3,15 @@
 #include "core/DataStructs.hpp"
 
 #include <QMainWindow>
+#include <QPointer>
 #include <QTableWidget>
+#include <QJsonArray>
 #include <vector>
 
 class AppController;
 class TrayIcon;
 class UpdateChecker;
+class UpdateDialog;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -18,6 +21,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent* event) override;
+    void changeEvent(QEvent* event) override;
 
 public slots:
     void onAlertTriggered(AlertEvent event);
@@ -34,9 +38,13 @@ private slots:
     void checkNow();
     void onCheckNowFinished(int productId, bool success, float newPrice, float newDiscount);
     void checkForUpdates();
-    void onUpdateAvailable(const QString& version, const QString& url);
+    void onUpdateAvailable(const QString& version,
+                           const QString& url,
+                           const QString& body,
+                           const QJsonArray& assets);
     void onNoUpdateAvailable();
     void onUpdateCheckFailed(const QString& errorMsg);
+    void showFromTray();
 
 private:
     void setupUi();
@@ -50,6 +58,7 @@ private:
     QTableWidget*    m_table;
     TrayIcon*        m_trayIcon;
     UpdateChecker*   m_updateChecker;
+    QPointer<UpdateDialog> m_updateDialog;
     bool             m_manualUpdateCheck = false;
     std::vector<Product> m_products;
 };

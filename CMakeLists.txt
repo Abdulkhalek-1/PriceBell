@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
-project(PriceBell VERSION 1.2.0 LANGUAGES CXX)
+project(PriceBell VERSION 1.3.0 LANGUAGES CXX)
+
+include(cmake/VersionInfo.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -8,6 +10,16 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
+
+# ── Build options ──────────────────────────────────────────────────────────────
+option(BUILD_EXAMPLES "Build example plugins" OFF)
+
+# AddressSanitizer support — enable with -DCMAKE_BUILD_TYPE=Asan
+if(CMAKE_BUILD_TYPE STREQUAL "Asan")
+    message(STATUS "AddressSanitizer enabled")
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer -g)
+    add_link_options(-fsanitize=address)
+endif()
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia)
 
@@ -27,9 +39,14 @@ set(WIN_RESOURCES "")
 if(WIN32)
     set(PLATFORM_FLAGS WIN32)
     set(WIN_RESOURCES assets/app.rc)
+    if(WIN_VERSION_RC)
+        list(APPEND WIN_RESOURCES "${WIN_VERSION_RC}")
+    endif()
 endif()
 
 add_executable(PriceBell ${PLATFORM_FLAGS} ${SOURCES} ${HEADERS} assets/resources.qrc ${QM_FILES} ${WIN_RESOURCES})
+
+pricebell_apply_version_info(PriceBell)
 
 target_include_directories(PriceBell PRIVATE include)
 
@@ -118,3 +135,48 @@ add_executable(test_url_validation tests/test_url_validation.cpp ${URL_VALIDATIO
 target_include_directories(test_url_validation PRIVATE include)
 target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
 add_test(NAME test_url_validation COMMAND test_url_validation)
+
+# ── Examples (opt-in) ──────────────────────────────────────────────────────────
+if(BUILD_EXAMPLES)
+    add_subdirectory(examples/plugin-starter)
+endif()
+
+# ── Install rules ──────────────────────────────────────────────────────────────
+install(TARGETS PriceBell DESTINATION bin)
+install(DIRECTORY assets/ DESTINATION share/PriceBell/assets)
+install(FILES packaging/linux/pricebell.desktop
+        DESTINATION share/applications)
+install(FILES assets/logo.svg
+        DESTINATION share/icons/hicolor/scalable/apps
+        RENAME pricebell.svg)
+# ── CPack packaging ────────────────────────────────────────────────────────────
+set(CPACK_PACKAGE_NAME            "PriceBell")
+set(CPACK_PACKAGE_VENDOR          "Abdulkhalek Muhammad")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Desktop price tracker for Steam, Udemy, Amazon")
+set(CPACK_PACKAGE_VERSION         "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_CONTACT         "abdulkhalek@example.com")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "PriceBell")
+
+# DEB
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER  "Abdulkhalek Muhammad")
+set(CPACK_DEBIAN_PACKAGE_SECTION     "utils")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS
+    "libqt5widgets5 (>= 5.12), libqt5sql5 (>= 5.12), libqt5sql5-sqlite, libqt5network5 (>= 5.12), libqt5multimedia5 (>= 5.12), libqt5svg5 (>= 5.12)")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_SOURCE_DIR}/packaging/linux/postinst")
+
+# RPM
+set(CPACK_RPM_PACKAGE_SUMMARY     "Desktop price tracker")
+set(CPACK_RPM_PACKAGE_REQUIRES    "qt5-qtbase >= 5.12, qt5-qtmultimedia >= 5.12, qt5-qtsvg >= 5.12")
+set(CPACK_RPM_POST_INSTALL_SCRIPT_FILE
+    "${CMAKE_SOURCE_DIR}/packaging/linux/postinst")
+
+# Generator is platform-specific
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+elseif(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+else()
+    set(CPACK_GENERATOR "DEB;RPM")
+endif()
+include(CPack)

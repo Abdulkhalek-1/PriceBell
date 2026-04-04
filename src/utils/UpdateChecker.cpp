@@ -3,6 +3,7 @@
 
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonArray>
 #include <QStringList>
 
 #ifndef APP_VERSION
@@ -17,7 +18,7 @@ UpdateChecker::UpdateChecker(QObject* parent)
 }
 
 void UpdateChecker::checkForUpdates() {
-    m_http->get("https://api.github.com/repos/Abdulkhalek-1/PriceBell/releases/latest",
+    m_http->get("https://api.github.com/repos/Abdulkhalek-1/PriceBell/releases",
         [this](bool success, const QString& body, const QString& error) {
             if (!success) {
                 emit checkFailed(error);
@@ -25,14 +26,28 @@ void UpdateChecker::checkForUpdates() {
             }
 
             QJsonDocument doc = QJsonDocument::fromJson(body.toUtf8());
-            if (!doc.isObject()) {
+            if (!doc.isArray()) {
                 emit checkFailed(tr("Invalid response from server."));
                 return;
             }
 
-            QJsonObject obj = doc.object();
-            QString tagName = obj.value("tag_name").toString();
-            QString htmlUrl = obj.value("html_url").toString();
+            // Find the first stable (non-prerelease, non-draft) release
+            QJsonObject release;
+            for (const QJsonValue& val : doc.array()) {
+                QJsonObject obj = val.toObject();
+                if (!obj.value("prerelease").toBool() && !obj.value("draft").toBool()) {
+                    release = obj;
+                    break;
+                }
+            }
+
+            if (release.isEmpty()) {
+                emit noUpdateAvailable();
+                return;
+            }
+
+            QString tagName = release.value("tag_name").toString();
+            QString htmlUrl = release.value("html_url").toString();
 
             if (tagName.isEmpty()) {
                 emit checkFailed(tr("No release information found."));
@@ -43,7 +58,8 @@ void UpdateChecker::checkForUpdates() {
             QString remoteVersion = tagName.startsWith('v') ? tagName.mid(1) : tagName;
 
             if (isNewerVersion(APP_VERSION, remoteVersion)) {
-                emit updateAvailable(remoteVersion, htmlUrl);
+                QJsonArray assets = release.value("assets").toArray();
+                emit updateAvailable(remoteVersion, htmlUrl, QString(), assets);
             } else {
                 emit noUpdateAvailable();
             }

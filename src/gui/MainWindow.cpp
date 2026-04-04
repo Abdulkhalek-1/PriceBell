@@ -3,6 +3,7 @@
 #include "gui/AlertHistoryDialog.hpp"
 #include "gui/SettingsDialog.hpp"
 #include "gui/TrayIcon.hpp"
+#include "gui/UpdateDialog.hpp"
 #include "core/AppController.hpp"
 #include "core/PluginManager.hpp"
 #include "utils/Logger.hpp"
@@ -27,6 +28,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QSet>
+#include <QJsonArray>
 #include <chrono>
 
 MainWindow::MainWindow(AppController* controller, QWidget* parent)
@@ -159,7 +161,7 @@ void MainWindow::setupMenu() {
 
 void MainWindow::setupTray() {
     m_trayIcon = new TrayIcon(this, this);
-    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &QWidget::show);
+    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &MainWindow::showFromTray);
     connect(m_trayIcon, &TrayIcon::quitRequested, qApp, &QApplication::quit);
     m_trayIcon->show();
 }
@@ -402,23 +404,28 @@ void MainWindow::checkForUpdates() {
     m_updateChecker->checkForUpdates();
 }
 
-void MainWindow::onUpdateAvailable(const QString& version, const QString& url) {
-    if (m_manualUpdateCheck) {
+void MainWindow::onUpdateAvailable(const QString& version,
+                                   const QString& url,
+                                   const QString& body,
+                                   const QJsonArray& assets) {
+    Q_UNUSED(body)
+
+    // Don't show if user has skipped this version
+    QSettings s("PriceBell", "PriceBell");
+    if (s.value("updates/skippedVersion").toString() == version) {
         m_manualUpdateCheck = false;
-        auto reply = QMessageBox::information(this, tr("Update Available"),
-            tr("A new version of PriceBell (%1) is available.\n\n"
-               "Would you like to open the release page?").arg(version),
-            QMessageBox::Yes | QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-            QDesktopServices::openUrl(QUrl(url));
-        }
-    } else {
-        // Silent auto-check: only tray notification
-        m_trayIcon->showMessage(
-            tr("Update Available"),
-            tr("PriceBell %1 is available.").arg(version),
-            QSystemTrayIcon::Information, 8000);
+        return;
     }
+
+    m_manualUpdateCheck = false;
+    if (m_updateDialog) {
+        m_updateDialog->raise();
+        m_updateDialog->activateWindow();
+        return;
+    }
+    m_updateDialog = new UpdateDialog(APP_VERSION, version, url, assets, this);
+    m_updateDialog->setAttribute(Qt::WA_DeleteOnClose);
+    m_updateDialog->show();
 }
 
 void MainWindow::onNoUpdateAvailable() {
@@ -483,4 +490,28 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         tr("PriceBell is still running in the background."),
         QSystemTrayIcon::Information, 3000);
     event->ignore();
+}
+
+void MainWindow::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::WindowStateChange) {
+        Qt::WindowStates state = windowState();
+        // Only persist when settling into a non-minimized state.
+        // Minimizing fires this event too; ignoring it preserves the
+        // fullscreen flag so tray-restore works correctly.
+        if (!(state & Qt::WindowMinimized)) {
+            SettingsProvider::instance().setWasFullscreen(
+                bool(state & Qt::WindowFullScreen));
+        }
+    }
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::showFromTray() {
+    if (SettingsProvider::instance().wasFullscreen()) {
+        showFullScreen();
+    } else {
+        showNormal();
+    }
+    raise();
+    activateWindow();
 }
