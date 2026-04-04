@@ -124,3 +124,11 @@ bool SettingsProvider::launchMinimized() const {
 void SettingsProvider::setLaunchMinimized(bool enabled) {
     m_settings.setValue(kLaunchMinimized, enabled);
 }
+
+bool SettingsProvider::wasFullscreen() const {
+    return m_settings.value(kWasFullscreen, false).toBool();
+}
+
+void SettingsProvider::setWasFullscreen(bool fullscreen) {
+    m_settings.setValue(kWasFullscreen, fullscreen);
+}

@@ -487,16 +487,20 @@ void MainWindow::closeEvent(QCloseEvent* event) {
 
 void MainWindow::changeEvent(QEvent* event) {
     if (event->type() == QEvent::WindowStateChange) {
-        QSettings s("PriceBell", "PriceBell");
-        s.setValue("window/wasFullscreen",
-                   bool(windowState() & Qt::WindowFullScreen));
+        Qt::WindowStates state = windowState();
+        // Only persist when settling into a non-minimized state.
+        // Minimizing fires this event too; ignoring it preserves the
+        // fullscreen flag so tray-restore works correctly.
+        if (!(state & Qt::WindowMinimized)) {
+            SettingsProvider::instance().setWasFullscreen(
+                bool(state & Qt::WindowFullScreen));
+        }
     }
     QMainWindow::changeEvent(event);
 }
 
 void MainWindow::showFromTray() {
-    QSettings s("PriceBell", "PriceBell");
-    if (s.value("window/wasFullscreen", false).toBool()) {
+    if (SettingsProvider::instance().wasFullscreen()) {
         showFullScreen();
     } else {
         showNormal();
