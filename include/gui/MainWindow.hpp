@@ -4,11 +4,13 @@
 
 #include <QMainWindow>
 #include <QTableWidget>
+#include <QJsonArray>
 #include <vector>
 
 class AppController;
 class TrayIcon;
 class UpdateChecker;
+class UpdateDialog;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -35,7 +37,10 @@ private slots:
     void checkNow();
     void onCheckNowFinished(int productId, bool success, float newPrice, float newDiscount);
     void checkForUpdates();
-    void onUpdateAvailable(const QString& version, const QString& url);
+    void onUpdateAvailable(const QString& version,
+                           const QString& url,
+                           const QString& body,
+                           const QJsonArray& assets);
     void onNoUpdateAvailable();
     void onUpdateCheckFailed(const QString& errorMsg);
     void showFromTray();

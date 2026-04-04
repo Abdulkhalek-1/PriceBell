@@ -27,6 +27,7 @@
 #include <QDesktopServices>
 #include <QUrl>
 #include <QSet>
+#include <QJsonArray>
 #include <chrono>
 
 MainWindow::MainWindow(AppController* controller, QWidget* parent)
@@ -402,7 +403,12 @@ void MainWindow::checkForUpdates() {
     m_updateChecker->checkForUpdates();
 }
 
-void MainWindow::onUpdateAvailable(const QString& version, const QString& url) {
+void MainWindow::onUpdateAvailable(const QString& version,
+                                   const QString& url,
+                                   const QString& body,
+                                   const QJsonArray& assets) {
+    Q_UNUSED(body)
+    Q_UNUSED(assets)
     if (m_manualUpdateCheck) {
         m_manualUpdateCheck = false;
         auto reply = QMessageBox::information(this, tr("Update Available"),
