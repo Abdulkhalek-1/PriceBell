@@ -29,7 +29,7 @@ Unicode True
 ; --- Install Section ---------------------------------------------------------
 Section "PriceBell" SecMain
     SetOutPath "$INSTDIR"
-    File /r "..\..\build-release\*"
+    File /r "${STAGEDIR}\*"
 
     ; Start Menu shortcut
     CreateDirectory "$SMPROGRAMS\PriceBell"

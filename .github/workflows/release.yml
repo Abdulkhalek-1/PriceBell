@@ -45,14 +45,12 @@ jobs:
       - name: Build DEB and RPM packages
         run: |
           sudo apt-get install -y rpm
-          cmake -B build-pkg -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
-          cmake --build build-pkg --parallel $(nproc)
-          cd build-pkg
+          cd build
           cpack -G DEB
           cpack -G RPM
           cd ..
-          find build-pkg -name "*.deb" -exec mv {} PriceBell-${{ env.VERSION }}-linux-amd64.deb \; || true
-          find build-pkg -name "*.rpm" -exec mv {} PriceBell-${{ env.VERSION }}-linux-x86_64.rpm \; || true
+          find build -name "*.deb" -exec mv {} PriceBell-${{ env.VERSION }}-linux-amd64.deb \;
+          find build -name "*.rpm" -exec mv {} PriceBell-${{ env.VERSION }}-linux-x86_64.rpm \;
 
       - name: Prepare AppDir
         run: |
@@ -169,8 +167,10 @@ jobs:
         run: |
           choco install nsis -y --no-progress
           $version = "${{ env.VERSION }}".TrimStart('v')
+          $arch = "${{ matrix.arch }}"
+          $stagingDir = "PriceBell-${{ env.VERSION }}-windows-$arch"
           $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
-          & $nsisExe /DVERSION=$version packaging\windows\installer.nsi
+          & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir packaging\windows\installer.nsi
           $setupFile = "PriceBell-$version-windows-setup.exe"
           if (Test-Path $setupFile) {
             Rename-Item $setupFile "PriceBell-${{ env.VERSION }}-windows-x64-setup.exe"
