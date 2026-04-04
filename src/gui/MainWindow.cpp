@@ -159,7 +159,7 @@ void MainWindow::setupMenu() {
 
 void MainWindow::setupTray() {
     m_trayIcon = new TrayIcon(this, this);
-    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &QWidget::show);
+    connect(m_trayIcon, &TrayIcon::showWindowRequested, this, &MainWindow::showFromTray);
     connect(m_trayIcon, &TrayIcon::quitRequested, qApp, &QApplication::quit);
     m_trayIcon->show();
 }
@@ -483,4 +483,28 @@ void MainWindow::closeEvent(QCloseEvent* event) {
         tr("PriceBell is still running in the background."),
         QSystemTrayIcon::Information, 3000);
     event->ignore();
+}
+
+void MainWindow::changeEvent(QEvent* event) {
+    if (event->type() == QEvent::WindowStateChange) {
+        Qt::WindowStates state = windowState();
+        // Only persist when settling into a non-minimized state.
+        // Minimizing fires this event too; ignoring it preserves the
+        // fullscreen flag so tray-restore works correctly.
+        if (!(state & Qt::WindowMinimized)) {
+            SettingsProvider::instance().setWasFullscreen(
+                bool(state & Qt::WindowFullScreen));
+        }
+    }
+    QMainWindow::changeEvent(event);
+}
+
+void MainWindow::showFromTray() {
+    if (SettingsProvider::instance().wasFullscreen()) {
+        showFullScreen();
+    } else {
+        showNormal();
+    }
+    raise();
+    activateWindow();
 }
