@@ -13,7 +13,7 @@ class UpdateDialog : public QDialog {
 public:
     explicit UpdateDialog(const QString& currentVersion,
                           const QString& newVersion,
-                          const QString& releaseBody,
+                          const QString& releaseUrl,
                           const QJsonArray& assets,
                           QWidget* parent = nullptr);
 
@@ -27,7 +27,7 @@ private slots:
 private:
     void setupUi(const QString& currentVersion,
                  const QString& newVersion,
-                 const QString& releaseBody);
+                 const QString& releaseUrl);
 
     QString             m_newVersion;
     QJsonArray          m_assets;

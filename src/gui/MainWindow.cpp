@@ -408,7 +408,7 @@ void MainWindow::onUpdateAvailable(const QString& version,
                                    const QString& url,
                                    const QString& body,
                                    const QJsonArray& assets) {
-    Q_UNUSED(url)
+    Q_UNUSED(body)
 
     // Don't show if user has skipped this version
     QSettings s("PriceBell", "PriceBell");
@@ -423,7 +423,7 @@ void MainWindow::onUpdateAvailable(const QString& version,
         m_updateDialog->activateWindow();
         return;
     }
-    m_updateDialog = new UpdateDialog(APP_VERSION, version, body, assets, this);
+    m_updateDialog = new UpdateDialog(APP_VERSION, version, url, assets, this);
     m_updateDialog->setAttribute(Qt::WA_DeleteOnClose);
     m_updateDialog->show();
 }

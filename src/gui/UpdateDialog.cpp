@@ -13,7 +13,7 @@
 
 UpdateDialog::UpdateDialog(const QString& currentVersion,
                            const QString& newVersion,
-                           const QString& releaseBody,
+                           const QString& releaseUrl,
                            const QJsonArray& assets,
                            QWidget* parent)
     : QDialog(parent)
@@ -23,12 +23,12 @@ UpdateDialog::UpdateDialog(const QString& currentVersion,
     setWindowTitle(tr("PriceBell Update Available"));
     setModal(true);
     setFixedWidth(440);
-    setupUi(currentVersion, newVersion, releaseBody);
+    setupUi(currentVersion, newVersion, releaseUrl);
 }
 
 void UpdateDialog::setupUi(const QString& currentVersion,
                             const QString& newVersion,
-                            const QString& releaseBody) {
+                            const QString& releaseUrl) {
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setSpacing(12);
     layout->setContentsMargins(20, 16, 20, 16);
@@ -39,13 +39,11 @@ void UpdateDialog::setupUi(const QString& currentVersion,
     versionLabel->setWordWrap(true);
     layout->addWidget(versionLabel);
 
-    if (!releaseBody.isEmpty()) {
-        QString truncated = releaseBody.left(400);
-        if (releaseBody.size() > 400) truncated += "…";
-        QLabel* changelogLabel = new QLabel(truncated, this);
-        changelogLabel->setWordWrap(true);
-        changelogLabel->setStyleSheet("color: #a6adc8; font-size: 11px;");
-        layout->addWidget(changelogLabel);
+    if (!releaseUrl.isEmpty()) {
+        QLabel* linkLabel = new QLabel(
+            tr("<a href=\"%1\">See what's new in v%2</a>").arg(releaseUrl, newVersion), this);
+        linkLabel->setOpenExternalLinks(true);
+        layout->addWidget(linkLabel);
     }
 
     m_statusLabel = new QLabel(this);
