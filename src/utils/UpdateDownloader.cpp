@@ -51,9 +51,9 @@ void UpdateDownloader::download(const QJsonArray& assets) {
         return;
     }
 
-    QNetworkRequest request(QUrl(url));
-    request.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell");
-    m_reply = m_manager->get(request);
+    QNetworkRequest req{QUrl(url)};
+    req.setHeader(QNetworkRequest::UserAgentHeader, "PriceBell");
+    m_reply = m_manager->get(req);
 
     connect(m_reply, &QNetworkReply::downloadProgress,
             this, [this](qint64 received, qint64 total) {

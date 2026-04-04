@@ -3,6 +3,7 @@
 #include "gui/AlertHistoryDialog.hpp"
 #include "gui/SettingsDialog.hpp"
 #include "gui/TrayIcon.hpp"
+#include "gui/UpdateDialog.hpp"
 #include "core/AppController.hpp"
 #include "core/PluginManager.hpp"
 #include "utils/Logger.hpp"
@@ -407,24 +408,18 @@ void MainWindow::onUpdateAvailable(const QString& version,
                                    const QString& url,
                                    const QString& body,
                                    const QJsonArray& assets) {
-    Q_UNUSED(body)
-    Q_UNUSED(assets)
-    if (m_manualUpdateCheck) {
-        m_manualUpdateCheck = false;
-        auto reply = QMessageBox::information(this, tr("Update Available"),
-            tr("A new version of PriceBell (%1) is available.\n\n"
-               "Would you like to open the release page?").arg(version),
-            QMessageBox::Yes | QMessageBox::No);
-        if (reply == QMessageBox::Yes) {
-            QDesktopServices::openUrl(QUrl(url));
-        }
-    } else {
-        // Silent auto-check: only tray notification
-        m_trayIcon->showMessage(
-            tr("Update Available"),
-            tr("PriceBell %1 is available.").arg(version),
-            QSystemTrayIcon::Information, 8000);
+    Q_UNUSED(url)
+
+    // Don't show if user has skipped this version
+    QSettings s("PriceBell", "PriceBell");
+    if (s.value("updates/skippedVersion").toString() == version) {
+        return;
     }
+
+    m_manualUpdateCheck = false;
+    UpdateDialog* dlg = new UpdateDialog(APP_VERSION, version, body, assets, this);
+    dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->show();
 }
 
 void MainWindow::onNoUpdateAvailable() {
