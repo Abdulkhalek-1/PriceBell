@@ -2,6 +2,12 @@
   <img src="assets/readme_banner.svg" alt="PriceBell Banner" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/Abdulkhalek-1/PriceBell/actions/workflows/ci.yml"><img src="https://github.com/Abdulkhalek-1/PriceBell/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+  <a href="https://github.com/Abdulkhalek-1/PriceBell/releases/latest"><img src="https://img.shields.io/github/v/release/Abdulkhalek-1/PriceBell?sort=semver" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Abdulkhalek-1/PriceBell" alt="License"></a>
+</p>
+
 # PriceBell
 
 A desktop price tracking application that monitors product prices across Steam, Udemy, Amazon, and custom sources. Get notified when prices drop below your thresholds or discounts reach your targets.
@@ -11,9 +17,11 @@ Built with C++17 and Qt5. Runs on Linux, macOS, and Windows.
 ## Features
 
 - **Multi-source tracking** -- Monitor prices from Steam, Udemy, Amazon, and user-configured sources
+- **Dual layout** -- Switch between a card grid (default for new installs) and a slim 5-column table with a right-hand detail pane
+- **URL auto-detect** -- Paste a Steam / Udemy / Amazon URL into Add Product and the source and product name fill in automatically
 - **Alert conditions** -- Set price and discount thresholds with AND logic (all conditions must be met)
 - **Check Now** -- On-demand price checking with multi-select support (Ctrl/Shift-click)
-- **Desktop notifications** -- System tray alerts with configurable notification sounds
+- **Desktop notifications** -- System tray alerts with configurable notification sounds, deduplicated to once per product per app launch
 - **Custom notification sounds** -- Browse, test, and set custom `.wav` alert sounds or use the built-in default
 - **Alert history** -- Review and dismiss past alerts
 - **Background polling** -- Per-product check intervals from 30 seconds to 24 hours
