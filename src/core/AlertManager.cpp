@@ -16,7 +16,12 @@ void AlertManager::onPriceUpdated(Product product, FetchResult result) {
     product.currentPrice = result.price;
     product.discount     = result.discount;
 
-    if (!PriceChecker::isMatch(product)) return;
+    if (!PriceChecker::isMatch(product)) {
+        // Conditions no longer met → forget the dedup state so the next match
+        // re-triggers a notification (single edge: not-matched → matched).
+        m_notifiedThisSession.remove(product.id);
+        return;
+    }
 
     // All conditions met — create and persist the alert event
     AlertEvent event;
@@ -32,8 +37,20 @@ void AlertManager::onPriceUpdated(Product product, FetchResult result) {
         Logger::warn("Failed to save alert event for product: " + event.productName);
     }
 
-    Logger::info("Alert triggered: " + product.name +
-                 " @ $" + std::to_string(result.price));
+    const bool firstThisSession = !m_notifiedThisSession.contains(product.id);
+    if (firstThisSession) {
+        m_notifiedThisSession.insert(product.id);
+        Logger::info("Alert triggered (first this session): " + product.name +
+                     " @ " + std::to_string(result.price));
+    }
 
-    emit alertTriggered(event);
+    emit alertTriggered(event, firstThisSession);
+}
+
+void AlertManager::resetNotificationFor(int productId) {
+    m_notifiedThisSession.remove(productId);
+}
+
+void AlertManager::resetAllNotifications() {
+    m_notifiedThisSession.clear();
 }

@@ -147,7 +147,7 @@ FetchResult AmazonHandler::parseResponse(const QByteArray& data, const std::stri
 
 FetchResult AmazonHandler::fetchProduct(const std::string& url) {
     if (!validateUrl(url)) {
-        return FetchResult{false, 0.0f, 0.0f, "Invalid URL for this handler"};
+        FetchResult r; r.errorMsg = "Invalid URL for this handler"; return r;
     }
 
     FetchResult result;

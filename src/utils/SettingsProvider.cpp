@@ -132,3 +132,48 @@ bool SettingsProvider::wasFullscreen() const {
 void SettingsProvider::setWasFullscreen(bool fullscreen) {
     m_settings.setValue(kWasFullscreen, fullscreen);
 }
+
+// ── Steam region ─────────────────────────────────────────────────────────────
+
+QString SettingsProvider::steamCountryCode() const {
+    return m_settings.value(kSteamCountryCode).toString();
+}
+
+void SettingsProvider::setSteamCountryCode(const QString& code) {
+    m_settings.setValue(kSteamCountryCode, code);
+}
+
+// ── Layout mode ──────────────────────────────────────────────────────────────
+
+SettingsProvider::LayoutMode SettingsProvider::layoutMode() const {
+    // Default differs by user type:
+    //   fresh install  → cards
+    //   upgraded user  → table (their existing layout)
+    QString def = m_settings.contains(kFirstSeenVersion) ? "table" : "cards";
+    QString v = m_settings.value(kLayoutMode, def).toString();
+    return v == "table" ? LayoutMode::Table : LayoutMode::Cards;
+}
+
+void SettingsProvider::setLayoutMode(LayoutMode mode) {
+    m_settings.setValue(kLayoutMode, mode == LayoutMode::Table ? "table" : "cards");
+}
+
+// ── Announcements ────────────────────────────────────────────────────────────
+
+bool SettingsProvider::isAnnouncementSeen(const QString& id) const {
+    return m_settings.value(QString(kAnnouncementSeenPrefix) + id, false).toBool();
+}
+
+void SettingsProvider::markAnnouncementSeen(const QString& id) {
+    m_settings.setValue(QString(kAnnouncementSeenPrefix) + id, true);
+    m_settings.sync();
+}
+
+bool SettingsProvider::isFreshInstall() {
+    bool fresh = !m_settings.contains(kFirstSeenVersion);
+    if (fresh) {
+        m_settings.setValue(kFirstSeenVersion, QString::fromLatin1(APP_VERSION));
+        m_settings.sync();
+    }
+    return fresh;
+}

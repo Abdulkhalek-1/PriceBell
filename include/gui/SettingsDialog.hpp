@@ -56,4 +56,8 @@ private:
     // Notification sound
     QCheckBox* m_notificationSoundCheck;
     QLineEdit* m_soundPathEdit;
+    // Steam region (auto / explicit cc code)
+    QComboBox* m_steamRegionCombo = nullptr;
+    // Default UI layout (cards / table)
+    QComboBox* m_layoutCombo = nullptr;
 };

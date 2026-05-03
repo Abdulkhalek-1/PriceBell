@@ -193,7 +193,7 @@ IPriceHandler* PluginManager::handlerFor(const std::string& sourceId) const {
 FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::string& url) {
     auto it = m_handlers.find(QString::fromStdString(sourceId));
     if (it == m_handlers.end()) {
-        return FetchResult{false, 0, 0, "No handler found for source: " + sourceId};
+        FetchResult r; r.errorMsg = "No handler found for source: " + sourceId; return r;
     }
 
     const HandlerEntry& entry = it.value();
@@ -209,7 +209,7 @@ FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::
             }
         }
         if (!matched) {
-            return FetchResult{false, 0, 0, "URL does not match handler's allowed patterns"};
+            FetchResult r; r.errorMsg = "URL does not match handler's allowed patterns"; return r;
         }
     }
 
@@ -218,6 +218,33 @@ FetchResult PluginManager::fetchProduct(const std::string& sourceId, const std::
     entry.handler->setHttpClient(ensureHttpClient());
 
     return entry.handler->fetchProduct(url);
+}
+
+IPriceHandler* PluginManager::findHandlerForUrl(const std::string& url) const {
+    if (url.empty()) return nullptr;
+
+    // Pass 1: handler-declared canHandle() — built-in handlers know their domains.
+    for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
+        if (it.value().handler->canHandle(url)) {
+            return it.value().handler.get();
+        }
+    }
+
+    // Pass 2: JSON / native plugins that declare urlPatterns. Matching uses the
+    // same prefix-truncation rule as fetchProduct() so the two paths agree.
+    QString qUrl = QString::fromStdString(url);
+    for (auto it = m_handlers.begin(); it != m_handlers.end(); ++it) {
+        const auto& entry = it.value();
+        if (entry.urlPatterns.isEmpty()) continue;
+        for (const QString& pattern : entry.urlPatterns) {
+            int star = pattern.indexOf('*');
+            QString prefix = star >= 0 ? pattern.left(star) : pattern;
+            if (!prefix.isEmpty() && qUrl.contains(prefix)) {
+                return entry.handler.get();
+            }
+        }
+    }
+    return nullptr;
 }
 
 QList<IPlugin2*> PluginManager::plugin2Interfaces() const {

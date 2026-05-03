@@ -195,6 +195,54 @@ QWidget* SettingsDialog::createGeneralTab() {
     langForm->addRow(tr("Language:"), m_languageCombo);
     layout->addWidget(langGroup);
 
+    // -- Sources ------------------------------------------------------------------
+    QGroupBox* sourcesGroup = new QGroupBox(tr("Sources"), page);
+    QFormLayout* sourcesForm = new QFormLayout(sourcesGroup);
+    sourcesForm->setContentsMargins(10, 8, 10, 8);
+    m_steamRegionCombo = new QComboBox(page);
+    m_steamRegionCombo->setToolTip(tr("Country code Steam uses to price products. "
+                                      "'Auto' follows your system locale."));
+    m_steamRegionCombo->addItem(tr("Auto (system locale)"), "");
+    // Curated list of common Steam regions; users can also keep "Auto".
+    struct R { const char* code; const char* name; };
+    const R kRegions[] = {
+        {"us", "United States (USD)"},
+        {"gb", "United Kingdom (GBP)"},
+        {"eu", "Eurozone (EUR)"},
+        {"ca", "Canada (CAD)"},
+        {"au", "Australia (AUD)"},
+        {"jp", "Japan (JPY)"},
+        {"br", "Brazil (BRL)"},
+        {"ar", "Argentina (ARS)"},
+        {"mx", "Mexico (MXN)"},
+        {"ru", "Russia (RUB)"},
+        {"tr", "Turkey (TRY)"},
+        {"in", "India (INR)"},
+        {"sa", "Saudi Arabia (SAR)"},
+        {"ae", "United Arab Emirates (AED)"},
+        {"eg", "Egypt (EGP)"},
+        {"za", "South Africa (ZAR)"},
+        {"cn", "China (CNY)"},
+        {"kr", "South Korea (KRW)"},
+    };
+    for (const auto& r : kRegions) {
+        m_steamRegionCombo->addItem(tr(r.name), QString::fromLatin1(r.code));
+    }
+    sourcesForm->addRow(tr("Steam region:"), m_steamRegionCombo);
+    layout->addWidget(sourcesGroup);
+
+    // -- Appearance ---------------------------------------------------------------
+    QGroupBox* appearanceGroup = new QGroupBox(tr("Appearance"), page);
+    QFormLayout* appearanceForm = new QFormLayout(appearanceGroup);
+    appearanceForm->setContentsMargins(10, 8, 10, 8);
+    m_layoutCombo = new QComboBox(page);
+    m_layoutCombo->setToolTip(tr("Default product list layout. You can also toggle "
+                                 "from the View menu."));
+    m_layoutCombo->addItem(tr("Cards (recommended)"), "cards");
+    m_layoutCombo->addItem(tr("Table"), "table");
+    appearanceForm->addRow(tr("Default layout:"), m_layoutCombo);
+    layout->addWidget(appearanceGroup);
+
     layout->addStretch();
     return scrollWrap(page);
 }
@@ -405,6 +453,18 @@ void SettingsDialog::loadSettings() {
     m_autoStartCheck->setChecked(AutoStartManager::isEnabled());
     m_launchMinimizedCheck->setChecked(sp.launchMinimized());
     m_autoUpdateCheck->setChecked(sp.checkUpdatesOnStartup());
+
+    // Steam region: empty stored value → "Auto" entry (data == "")
+    if (m_steamRegionCombo) {
+        int idx = m_steamRegionCombo->findData(sp.steamCountryCode());
+        m_steamRegionCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+    }
+    if (m_layoutCombo) {
+        QString want = sp.layoutMode() == SettingsProvider::LayoutMode::Table
+                           ? "table" : "cards";
+        int idx = m_layoutCombo->findData(want);
+        m_layoutCombo->setCurrentIndex(idx >= 0 ? idx : 0);
+    }
 }
 
 void SettingsDialog::saveSettings() {
@@ -452,6 +512,15 @@ void SettingsDialog::saveSettings() {
         }
     }
     sp.setLaunchMinimized(m_launchMinimizedCheck->isChecked());
+
+    if (m_steamRegionCombo) {
+        sp.setSteamCountryCode(m_steamRegionCombo->currentData().toString());
+    }
+    if (m_layoutCombo) {
+        sp.setLayoutMode(m_layoutCombo->currentData().toString() == "table"
+                             ? SettingsProvider::LayoutMode::Table
+                             : SettingsProvider::LayoutMode::Cards);
+    }
 
     accept();
 }

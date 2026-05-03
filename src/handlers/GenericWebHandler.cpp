@@ -41,7 +41,7 @@ bool GenericWebHandler::validateUrl(const std::string& url) const {
 
 FetchResult GenericWebHandler::fetchProduct(const std::string& url) {
     if (!validateUrl(url)) {
-        return FetchResult{false, 0.0f, 0.0f, "Invalid URL for this handler"};
+        FetchResult r; r.errorMsg = "Invalid URL for this handler"; return r;
     }
 
     FetchResult result;
@@ -59,7 +59,7 @@ FetchResult GenericWebHandler::fetchProduct(const std::string& url) {
 
     QJsonDocument doc = QJsonDocument::fromJson(resp.body);
     if (doc.isNull()) {
-        return FetchResult{false, 0.0f, 0.0f, "Invalid JSON response"};
+        FetchResult r; r.errorMsg = "Invalid JSON response"; return r;
     }
 
     std::string body = resp.body.toStdString();

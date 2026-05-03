@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(PriceBell VERSION 1.3.0 LANGUAGES CXX)
+project(PriceBell VERSION 1.4.0 LANGUAGES CXX)
 
 include(cmake/VersionInfo.cmake)
 
@@ -21,7 +21,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Asan")
     add_link_options(-fsanitize=address)
 endif()
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Sql Network Svg LinguistTools Multimedia Concurrent Test)
 
 set(TS_FILES
     i18n/pricebell_en.ts
@@ -56,6 +56,7 @@ target_link_libraries(PriceBell
     Qt5::Network
     Qt5::Svg
     Qt5::Multimedia
+    Qt5::Concurrent
 )
 
 # Create plugins directory next to binary
@@ -135,6 +136,30 @@ add_executable(test_url_validation tests/test_url_validation.cpp ${URL_VALIDATIO
 target_include_directories(test_url_validation PRIVATE include)
 target_link_libraries(test_url_validation Qt5::Widgets Qt5::Network)
 add_test(NAME test_url_validation COMMAND test_url_validation)
+
+# URL routing test (PluginManager::findHandlerForUrl + IPriceHandler::clone)
+add_executable(test_url_routing tests/test_url_routing.cpp ${URL_VALIDATION_SOURCES}
+    src/core/PluginManager.cpp
+    src/storage/Database.cpp
+    src/storage/ProductRepository.cpp
+    src/storage/AlertRepository.cpp)
+target_include_directories(test_url_routing PRIVATE include)
+target_link_libraries(test_url_routing Qt5::Widgets Qt5::Sql Qt5::Network)
+add_test(NAME test_url_routing COMMAND test_url_routing)
+
+# Alert dedup test (AlertManager session-scoped notification dedup)
+# AlertManager.hpp listed explicitly so AUTOMOC generates the metaobject.
+add_executable(test_alert_dedup tests/test_alert_dedup.cpp
+    src/core/AlertManager.cpp
+    src/core/PriceChecker.cpp
+    src/storage/Database.cpp
+    src/storage/AlertRepository.cpp
+    src/storage/ProductRepository.cpp
+    src/utils/Logger.cpp
+    include/core/AlertManager.hpp)
+target_include_directories(test_alert_dedup PRIVATE include)
+target_link_libraries(test_alert_dedup Qt5::Core Qt5::Sql Qt5::Test)
+add_test(NAME test_alert_dedup COMMAND test_alert_dedup)
 
 # ── Examples (opt-in) ──────────────────────────────────────────────────────────
 if(BUILD_EXAMPLES)

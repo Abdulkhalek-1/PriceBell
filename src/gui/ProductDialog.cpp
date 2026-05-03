@@ -1,5 +1,6 @@
 #include "gui/ProductDialog.hpp"
 #include "utils/CurrencyUtils.hpp"
+#include "utils/HttpClient.hpp"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -9,22 +10,26 @@
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QMessageBox>
+#include <QPointer>
+#include <QtConcurrent/QtConcurrent>
 
 ProductDialog::ProductDialog(PluginManager* pluginManager, QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), m_pluginManager(pluginManager)
 {
     setWindowTitle(tr("Add Product"));
-    resize(420, 540);
+    resize(440, 580);
     setupUi(pluginManager);
 }
 
 ProductDialog::ProductDialog(PluginManager* pluginManager, const Product& existing, QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent), m_pluginManager(pluginManager)
 {
     setWindowTitle(tr("Edit Product"));
-    resize(420, 540);
+    resize(440, 580);
     setupUi(pluginManager);
     populateFrom(existing);
+    // Editing an existing product: name was already user-chosen, never overwrite.
+    m_userTouchedName = true;
 }
 
 void ProductDialog::setupUi(PluginManager* pluginManager) {
@@ -39,7 +44,15 @@ void ProductDialog::setupUi(PluginManager* pluginManager) {
 
     m_urlEdit  = new QLineEdit(this);
     m_urlEdit->setPlaceholderText("https://store.steampowered.com/app/730/...");
-    m_urlEdit->setToolTip(tr("Paste the product URL from the store page"));
+    m_urlEdit->setToolTip(tr("Paste the product URL — source and name will be auto-detected"));
+
+    // Detect-status label always reserves a single line so the form below
+    // doesn't shift up/down when the message appears or disappears.
+    m_detectStatus = new QLabel(QStringLiteral(" "), this);
+    m_detectStatus->setStyleSheet("color: #6c7086; font-size: 11px;");
+    QFontMetrics dsFm(m_detectStatus->font());
+    m_detectStatus->setFixedHeight(dsFm.height() + 2);
+    m_detectStatus->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
     m_sourceCombo = new QComboBox(this);
     m_sourceCombo->setToolTip(tr("Select the price source type"));
@@ -50,8 +63,46 @@ void ProductDialog::setupUi(PluginManager* pluginManager) {
 
     infoForm->addRow(tr("Name:"),   m_nameEdit);
     infoForm->addRow(tr("URL:"),    m_urlEdit);
+    // Use a span row so the status text aligns with the URL field, not the
+    // label column. spanningRow keeps the form's column widths stable.
+    infoForm->addRow(m_detectStatus);
     infoForm->addRow(tr("Source:"), m_sourceCombo);
     mainLayout->addWidget(infoGroup);
+
+    // Track whether the user has typed a name themselves so auto-detect doesn't
+    // overwrite it. textEdited fires only on user edits, not setText().
+    connect(m_nameEdit, &QLineEdit::textEdited, this, [this](const QString& t) {
+        m_userTouchedName = !t.trimmed().isEmpty();
+    });
+
+    // Debounced URL auto-detect. 400 ms is short enough to feel instant after
+    // a paste but long enough to avoid firing on every keystroke during typing.
+    m_urlDebounce = new QTimer(this);
+    m_urlDebounce->setSingleShot(true);
+    m_urlDebounce->setInterval(400);
+    connect(m_urlDebounce, &QTimer::timeout, this, &ProductDialog::runUrlDetect);
+    connect(m_urlEdit, &QLineEdit::textChanged, this, &ProductDialog::onUrlChanged);
+
+    connect(this, &ProductDialog::detectFinished,
+            this, [this](QString sourceId, QString name, QString /*currency*/) {
+        if (sourceId.isEmpty()) {
+            m_detectStatus->setText(tr("Couldn't auto-detect source from this URL."));
+            return;
+        }
+        selectSourceById(sourceId);
+        QString status = tr("Detected: %1").arg(sourceId);
+        if (!name.isEmpty()) {
+            status += QString(" — %1").arg(name);
+            if (!m_userTouchedName) {
+                m_nameEdit->setText(name);
+            }
+        }
+        // Elide so a long product name doesn't widen the dialog.
+        QFontMetrics fm(m_detectStatus->font());
+        m_detectStatus->setText(fm.elidedText(status, Qt::ElideRight,
+            std::max(120, m_detectStatus->width() - 8)));
+        m_detectStatus->setToolTip(status);
+    }, Qt::QueuedConnection);
 
     // -- Filters ------------------------------------------------------------------
     QGroupBox* filterGroup = new QGroupBox(tr("Alert Conditions"), this);
@@ -136,6 +187,9 @@ void ProductDialog::setupUi(PluginManager* pluginManager) {
 
 void ProductDialog::populateFrom(const Product& product) {
     m_nameEdit->setText(QString::fromStdString(product.name));
+    // Mark this URL as already-detected so the textChanged signal fired by
+    // setText() doesn't kick off a redundant network fetch in edit mode.
+    m_lastDetectedUrl = QString::fromStdString(product.url);
     m_urlEdit->setText(QString::fromStdString(product.url));
     m_intervalSpin->setValue(static_cast<int>(product.checkInterval.count()));
 
@@ -186,6 +240,71 @@ void ProductDialog::removeFilter() {
         delete m_filtersList->takeItem(row);
         m_conditions.erase(m_conditions.begin() + row);
     }
+}
+
+void ProductDialog::onUrlChanged() {
+    QString url = m_urlEdit->text().trimmed();
+    if (url == m_lastDetectedUrl) return;       // already detected this URL
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        // Use a single space so the line keeps its reserved height; this
+        // avoids the form below jumping when the user clears the URL field.
+        m_detectStatus->setText(QStringLiteral(" "));
+        m_detectStatus->setToolTip(QString());
+        m_urlDebounce->stop();
+        return;
+    }
+    m_urlDebounce->start();
+}
+
+void ProductDialog::selectSourceById(const QString& sourceId) {
+    int idx = m_sourceIds.indexOf(sourceId);
+    if (idx >= 0) m_sourceCombo->setCurrentIndex(idx);
+}
+
+void ProductDialog::runUrlDetect() {
+    if (!m_pluginManager) return;
+    QString url = m_urlEdit->text().trimmed();
+    if (url.isEmpty()) return;
+    if (url == m_lastDetectedUrl) return;
+
+    IPriceHandler* h = m_pluginManager->findHandlerForUrl(url.toStdString());
+    if (!h) {
+        m_lastDetectedUrl = url;
+        emit detectFinished(QString(), QString(), QString());
+        return;
+    }
+
+    QString sourceId = QString::fromStdString(h->handlerId());
+    // Show detection status immediately while name fetch runs in background.
+    selectSourceById(sourceId);
+    m_detectStatus->setText(tr("Detected: %1 — fetching name…").arg(sourceId));
+    m_lastDetectedUrl = url;
+
+    // Clone the handler so the worker thread owns an isolated instance with
+    // its own HttpClient — no shared mutation with the polling thread.
+    std::shared_ptr<IPriceHandler> worker(h->clone().release());
+    if (!worker) {
+        // Handler doesn't support cloning (e.g. JSON plugin) — keep source
+        // detection but skip the name fetch.
+        emit detectFinished(sourceId, QString(), QString());
+        return;
+    }
+
+    std::string urlStd = url.toStdString();
+    QPointer<ProductDialog> self(this);
+    QtConcurrent::run([self, urlStd, sourceId, worker]() {
+        HttpClient localClient;
+        worker->setHttpClient(&localClient);
+        FetchResult res = worker->fetchProduct(urlStd);
+        if (!self) return;   // dialog closed before fetch finished
+        QString name     = res.success ? QString::fromStdString(res.name) : QString();
+        QString currency = QString::fromStdString(res.currency);
+        QMetaObject::invokeMethod(self.data(), "detectFinished",
+                                  Qt::QueuedConnection,
+                                  Q_ARG(QString, sourceId),
+                                  Q_ARG(QString, name),
+                                  Q_ARG(QString, currency));
+    });
 }
 
 Product ProductDialog::getProduct() const {

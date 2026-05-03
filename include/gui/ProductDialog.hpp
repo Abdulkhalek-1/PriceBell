@@ -5,10 +5,12 @@
 
 #include <QDialog>
 #include <QLineEdit>
+#include <QLabel>
 #include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QSpinBox>
 #include <QListWidget>
+#include <QTimer>
 #include <vector>
 
 class ProductDialog : public QDialog {
@@ -26,18 +28,31 @@ public:
 private slots:
     void addFilter();
     void removeFilter();
+    void onUrlChanged();
+    void runUrlDetect();
+
+signals:
+    // Internal signal for thread-safe delivery from background fetch.
+    void detectFinished(QString sourceId, QString name, QString currency);
 
 private:
     void setupUi(PluginManager* pluginManager);
     void populateFrom(const Product& product);
+    void selectSourceById(const QString& sourceId);
 
+    PluginManager*   m_pluginManager = nullptr;
     QLineEdit*       m_nameEdit;
     QLineEdit*       m_urlEdit;
+    QLabel*          m_detectStatus = nullptr;
     QComboBox*       m_sourceCombo;
     QListWidget*     m_filtersList;
     QComboBox*       m_filterTypeCombo;
     QDoubleSpinBox*  m_filterValueSpin;
     QSpinBox*        m_intervalSpin;
+
+    QTimer*          m_urlDebounce = nullptr;
+    QString          m_lastDetectedUrl;
+    bool             m_userTouchedName = false;
 
     std::vector<PriceCondition> m_conditions;
     // Maps combo index → source id string
