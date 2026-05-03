@@ -1,0 +1,97 @@
+name: Build Windows (test)
+
+# Manual-only build for testing without cutting a release. Mirrors the steps
+# in release.yml's `windows` job but skips the publish step — you download
+# the artifacts from the run's Summary page instead.
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: 'Optional label for the artifact (e.g. v1.4.0-pr42, fix-fonts)'
+        required: false
+        default: 'test'
+
+env:
+  LABEL: ${{ inputs.label || 'test' }}
+
+jobs:
+  windows-x64:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          arch: win64_msvc2019_64
+
+      - name: Install OpenSSL 1.1
+        run: choco install openssl --version=1.1.1.2100 -y --no-progress
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure and build
+        run: |
+          cmake -B build -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
+          cmake --build build --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Stage application
+        shell: pwsh
+        run: |
+          $label = "${{ env.LABEL }}"
+          $dir = "PriceBell-$label-windows-x64"
+
+          New-Item -ItemType Directory -Path $dir
+          Copy-Item build/PriceBell.exe $dir/
+          Copy-Item -Recurse build/assets $dir/assets -ErrorAction SilentlyContinue
+          Copy-Item -Recurse build/i18n $dir/i18n -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path "$dir/plugins" -Force
+          Copy-Item LICENSE, README.md $dir/
+
+          windeployqt --release --no-translations --no-opengl-sw "$dir/PriceBell.exe"
+
+          $sslBin = "C:\Program Files\OpenSSL\bin"
+          if (Test-Path "$sslBin\libssl-1_1*.dll") {
+              Copy-Item "$sslBin\libssl-1_1*.dll" "$dir/"
+              Copy-Item "$sslBin\libcrypto-1_1*.dll" "$dir/"
+              Write-Host "Copied OpenSSL 1.1 DLLs from $sslBin"
+          } else {
+              Write-Warning "OpenSSL 1.1 DLLs not found - HTTPS will not work"
+          }
+
+          Compress-Archive -Path $dir -DestinationPath "PriceBell-$label-windows-x64.zip"
+
+      - name: Build NSIS installer
+        shell: pwsh
+        run: |
+          choco install nsis -y --no-progress
+          $label = "${{ env.LABEL }}"
+          # Installer.nsi expects a numeric VERSION; strip a leading 'v' if any.
+          $version = $label.TrimStart('v')
+          $stagingDir = "$env:GITHUB_WORKSPACE\PriceBell-$label-windows-x64"
+          $nsisExe = "C:\Program Files (x86)\NSIS\makensis.exe"
+          & $nsisExe /DVERSION=$version /DSTAGEDIR=$stagingDir /DARCH=x64 packaging\windows\installer.nsi
+          $setupFile = "packaging\windows\PriceBell-$version-windows-x64-setup.exe"
+          if (Test-Path $setupFile) {
+              Move-Item $setupFile "PriceBell-$label-windows-x64-setup.exe"
+          }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-${{ env.LABEL }}
+          if-no-files-found: warn
+          path: |
+            PriceBell-${{ env.LABEL }}-windows-x64.zip
+            PriceBell-${{ env.LABEL }}-windows-x64-setup.exe
+          retention-days: 14
