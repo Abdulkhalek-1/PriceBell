@@ -40,6 +40,11 @@ public:
     // Returns the handler for the given source id, or nullptr if not found.
     IPriceHandler* handlerFor(const std::string& sourceId) const;
 
+    // Returns the first handler that recognises the URL (via canHandle() or a
+    // declared urlPatterns prefix), or nullptr if none match. Used by the
+    // ProductDialog auto-detect on URL paste.
+    IPriceHandler* findHandlerForUrl(const std::string& url) const;
+
     // Fetches a product, enforcing URL pattern restrictions for plugins.
     FetchResult fetchProduct(const std::string& sourceId, const std::string& url);
 

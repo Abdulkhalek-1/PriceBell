@@ -38,7 +38,7 @@ signals:
     void productUpdated(const Product& product);
     void productRemoved(int productId);
     void priceChanged(int productId, float newPrice, float newDiscount);
-    void alertTriggered(const AlertEvent& event);
+    void alertTriggered(const AlertEvent& event, bool firstThisSession);
     void checkNowFinished(int productId, bool success, float price, float discount);
 
 private:

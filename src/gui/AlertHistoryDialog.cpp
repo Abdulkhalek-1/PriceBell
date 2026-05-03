@@ -90,8 +90,10 @@ void AlertHistoryDialog::populateTable(const std::vector<AlertEvent>& events) {
         m_table->setItem(row, 3, item(timeStr));
         m_table->setItem(row, 4, item(e.status == AlertStatus::DISMISSED ? tr("Dismissed") : tr("Active")));
 
-        // Store alert id in hidden role for dismiss action
+        // Store alert id in hidden role for dismiss action; product id in
+        // UserRole+1 so we can re-arm notifications when dismissed.
         m_table->item(row, 0)->setData(Qt::UserRole, e.id);
+        m_table->item(row, 0)->setData(Qt::UserRole + 1, e.productId);
 
         if (e.status == AlertStatus::TRIGGERED)
             m_table->item(row, 4)->setForeground(QColor("#a6e3a1")); // green
@@ -104,8 +106,10 @@ void AlertHistoryDialog::dismissSelected() {
     int row = m_table->currentRow();
     if (row < 0) return;
 
-    int alertId = m_table->item(row, 0)->data(Qt::UserRole).toInt();
+    int alertId   = m_table->item(row, 0)->data(Qt::UserRole).toInt();
+    int productId = m_table->item(row, 0)->data(Qt::UserRole + 1).toInt();
     AlertRepository::dismiss(alertId);
+    if (productId > 0) emit alertDismissed(productId);
     refresh();
 }
 

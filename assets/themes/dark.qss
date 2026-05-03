@@ -4,7 +4,7 @@
 QMainWindow, QDialog, QWidget {
     background-color: #1e1e2e;
     color: #cdd6f4;
-    font-family: "Inter", "Segoe UI", "SF Pro Text", sans-serif;
+    font-family: "Noto Sans", "Noto Naskh Arabic", "Inter", "Segoe UI", "SF Pro Text", sans-serif;
     font-size: 13px;
 }
 
@@ -243,4 +243,147 @@ QTabBar::tab:hover:!selected {
 
 QTabBar::tab:first {
     margin-left: 0;
+}
+
+/* ── Splitter ──────────────────────────────────────────────────────────────── */
+QSplitter::handle {
+    background-color: #313244;
+}
+QSplitter::handle:horizontal {
+    width: 4px;
+}
+QSplitter::handle:vertical {
+    height: 4px;
+}
+QSplitter::handle:hover {
+    background-color: #cba6f7;
+}
+
+/* ── Stacked widget (layout switcher) ──────────────────────────────────────── */
+QStackedWidget {
+    background-color: transparent;
+}
+
+/* ── Card view (QListView in IconMode) ─────────────────────────────────────── */
+QListView#productCardView {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 6px;
+    padding: 8px;
+    outline: none;
+}
+
+/* ── Detail pane ───────────────────────────────────────────────────────────── */
+QFrame#productDetailPane {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 6px;
+}
+QScrollArea#detailScroll {
+    background-color: transparent;
+    border: none;
+}
+QScrollArea#detailScroll > QWidget > QWidget {
+    background-color: transparent;
+}
+QFrame#detailActionBar {
+    background-color: #1e1e2e;
+    border-top: 1px solid #313244;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+QLabel#detailTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #cba6f7;
+}
+QLabel#detailUrl {
+    color: #6c7086;
+    font-size: 11px;
+}
+QLabel#detailSection {
+    color: #cba6f7;
+    font-weight: bold;
+    font-size: 12px;
+    padding-top: 6px;
+}
+
+/* ── Chips (discount, condition, source) ───────────────────────────────────── */
+QLabel.chip {
+    background-color: #313244;
+    color: #cdd6f4;
+    border-radius: 9px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+QLabel#chipDiscount {
+    background-color: #a6e3a1;
+    color: #1e1e2e;
+    border-radius: 9px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: bold;
+}
+QLabel#chipCondition {
+    background-color: #313244;
+    color: #cba6f7;
+    border-radius: 9px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+/* ── Strikethrough original price ──────────────────────────────────────────── */
+QLabel#priceOriginal {
+    color: #6c7086;
+    text-decoration: line-through;
+    font-size: 11px;
+}
+
+/* ── Layout toggle (shadcn-style segmented ToggleGroup) ────────────────────── */
+QFrame#layoutToggleGroup {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 8px;
+}
+QFrame#layoutToggleGroup QPushButton {
+    background-color: transparent;
+    color: #a6adc8;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 56px;
+}
+QFrame#layoutToggleGroup QPushButton:hover {
+    background-color: #313244;
+    color: #cdd6f4;
+}
+QFrame#layoutToggleGroup QPushButton:checked {
+    background-color: #cba6f7;
+    color: #1e1e2e;
+    font-weight: 600;
+}
+QFrame#layoutToggleGroup QPushButton:checked:hover {
+    background-color: #b4befe;
+    color: #1e1e2e;
+}
+QFrame#layoutToggleGroup QPushButton:focus {
+    outline: none;
+}
+
+/* ── Announcement toast ────────────────────────────────────────────────────── */
+QFrame#announcementToast {
+    background-color: #181825;
+    border: 1px solid #cba6f7;
+    border-radius: 8px;
+}
+QLabel#announcementTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #cba6f7;
+}
+QLabel#announcementBody {
+    color: #cdd6f4;
+    font-size: 12px;
 }

@@ -42,6 +42,24 @@ public:
     bool wasFullscreen() const;
     void setWasFullscreen(bool fullscreen);
 
+    // Steam region (ISO-3166 alpha-2). Empty = "auto" → derive from system locale.
+    QString steamCountryCode() const;
+    void    setSteamCountryCode(const QString& code);
+
+    // Layout: "cards" or "table". Default decided per-call (fresh installs get
+    // "cards", upgraders default to "table" so the UI doesn't shift under them).
+    enum class LayoutMode { Cards, Table };
+    LayoutMode layoutMode() const;
+    void       setLayoutMode(LayoutMode mode);
+
+    // Feature announcement tracking (per-install, persisted via QSettings).
+    bool isAnnouncementSeen(const QString& id) const;
+    void markAnnouncementSeen(const QString& id);
+    // True before any announcement state has been recorded — used so brand-new
+    // installs don't get blasted with backlog announcements from prior versions.
+    // First call also stamps the firstSeenVersion key as a side effect.
+    bool isFreshInstall();
+
 private:
     SettingsProvider();
     QSettings m_settings;
@@ -64,4 +82,8 @@ private:
     static constexpr const char* kCheckUpdates          = "updates/check_on_startup";
     static constexpr const char* kLaunchMinimized       = "startup/launchMinimized";
     static constexpr const char* kWasFullscreen          = "window/wasFullscreen";
+    static constexpr const char* kSteamCountryCode       = "steam/country_code";
+    static constexpr const char* kLayoutMode             = "ui/layout_mode";
+    static constexpr const char* kAnnouncementSeenPrefix = "announcements/seen/";
+    static constexpr const char* kFirstSeenVersion       = "announcements/firstSeenVersion";
 };

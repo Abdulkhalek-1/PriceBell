@@ -13,6 +13,11 @@ public:
     // Reloads alert history from the database and refreshes the table.
     void refresh();
 
+signals:
+    // Emitted after the user dismisses an alert. MainWindow forwards to
+    // AlertManager so the next matching tick re-notifies for that product.
+    void alertDismissed(int productId);
+
 private slots:
     void dismissSelected();
     void filterByProduct(int productId);

@@ -69,6 +69,7 @@ struct Product {
     std::string                           sourcePluginId; // non-empty when source == PLUGIN
     std::string                           currency = "USD";  // ISO 4217 currency code
     float                                 currentPrice   = 0.0f;
+    float                                 originalPrice  = 0.0f;  // pre-discount; 0 = unknown
     float                                 discount       = 0.0f;  // percentage 0-100
     bool                                  isActive       = true;
     std::vector<PriceCondition>           filters;
@@ -101,10 +102,13 @@ struct SourceConfig {
 // ── Fetch result returned by all handlers ─────────────────────────────────────
 
 struct FetchResult {
-    bool        success  = false;
-    float       price    = 0.0f;
-    float       discount = 0.0f;
+    bool        success       = false;
+    float       price         = 0.0f;
+    float       discount      = 0.0f;
+    float       originalPrice = 0.0f;   // pre-discount price; 0 = unknown
     std::string errorMsg;
+    std::string name;                   // product name extracted from the source
+    std::string currency;               // ISO 4217 currency code from the source
 };
 
 // Required so Qt can queue these types across thread boundaries via signals.

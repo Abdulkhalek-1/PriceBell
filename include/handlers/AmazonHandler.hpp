@@ -16,6 +16,10 @@ public:
     std::string handlerId()   const override { return "amazon"; }
     std::string displayName() const override { return "Amazon"; }
     void setHttpClient(HttpClient* http) override { m_http = http; }
+    bool canHandle(const std::string& url) const override { return validateUrl(url); }
+    std::unique_ptr<IPriceHandler> clone() const override {
+        return std::unique_ptr<IPriceHandler>(new AmazonHandler(nullptr));
+    }
 
 private:
     HttpClient* m_http;

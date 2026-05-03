@@ -59,6 +59,14 @@ void AppController::initialize() {
     connect(m_alertManager, &AlertManager::alertTriggered,
             this, &AppController::alertTriggered);
 
+    // Re-arm notifications when product is edited (conditions may have changed)
+    // or removed.
+    connect(this, &AppController::productUpdated, this, [this](const Product& p) {
+        m_alertManager->resetNotificationFor(p.id);
+    });
+    connect(this, &AppController::productRemoved,
+            m_alertManager, &AlertManager::resetNotificationFor);
+
     // Load products and start polling
     auto products = ProductRepository::findAll();
     m_poller->setProducts(products);

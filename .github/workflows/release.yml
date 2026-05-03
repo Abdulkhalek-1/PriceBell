@@ -204,11 +204,21 @@ jobs:
 
       - name: Generate changelog
         run: |
-          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${{ env.VERSION }}$" | head -1)
-          if [ -z "$PREV_TAG" ]; then
-            git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
+          # Prefer the curated release notes at docs/releases/<tag>.md so the
+          # GitHub Release body is the polished user-facing version, not the
+          # raw git log. Fall back to git log if no curated file exists.
+          NOTES_FILE="docs/releases/${{ env.VERSION }}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            cp "$NOTES_FILE" /tmp/changelog.txt
+            echo "Using curated release notes: $NOTES_FILE"
           else
-            git log --pretty=format:"- %s (%h)" "${PREV_TAG}..${{ env.VERSION }}" > /tmp/changelog.txt
+            PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${{ env.VERSION }}$" | head -1)
+            if [ -z "$PREV_TAG" ]; then
+              git log --pretty=format:"- %s (%h)" HEAD > /tmp/changelog.txt
+            else
+              git log --pretty=format:"- %s (%h)" "${PREV_TAG}..${{ env.VERSION }}" > /tmp/changelog.txt
+            fi
+            echo "No curated notes found; generated changelog from git log"
           fi
 
       - name: Publish release

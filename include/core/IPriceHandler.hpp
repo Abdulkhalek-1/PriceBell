@@ -1,6 +1,7 @@
 #pragma once
 
 #include "DataStructs.hpp"
+#include <memory>
 #include <string>
 
 class HttpClient;
@@ -22,4 +23,17 @@ public:
 
     // Inject or replace the HttpClient used for network requests.
     virtual void setHttpClient(HttpClient* http) { (void)http; }
+
+    // True when this handler recognises and can fetch the given URL. Used by
+    // PluginManager::findHandlerForUrl to auto-route a pasted URL to the
+    // matching handler. Default false so existing plugins keep compiling and
+    // are only matched via their JSON-declared urlPatterns.
+    virtual bool canHandle(const std::string& url) const { (void)url; return false; }
+
+    // Returns a fresh, independent instance of this handler. Used by the
+    // ProductDialog auto-detect flow so the dialog can run a name-fetch on its
+    // own thread with its own HttpClient, without racing the poller against
+    // the shared handler instance owned by PluginManager. Default returns
+    // nullptr — handlers that don't support cloning simply skip auto-fetch.
+    virtual std::unique_ptr<IPriceHandler> clone() const { return nullptr; }
 };
