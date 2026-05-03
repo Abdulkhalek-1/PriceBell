@@ -14,6 +14,13 @@ add_compile_definitions(APP_VERSION="${PROJECT_VERSION}")
 # ── Build options ──────────────────────────────────────────────────────────────
 option(BUILD_EXAMPLES "Build example plugins" OFF)
 
+# Force UTF-8 source + execution charset on MSVC so non-ASCII string literals
+# (em-dashes, ≤, ≥, ✓, …) don't get mangled into mojibake on Windows. GCC/Clang
+# already default to UTF-8.
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # AddressSanitizer support — enable with -DCMAKE_BUILD_TYPE=Asan
 if(CMAKE_BUILD_TYPE STREQUAL "Asan")
     message(STATUS "AddressSanitizer enabled")
